@@ -1,13 +1,16 @@
-version: "3.8"
 services:
   webclipper:
     build: .
     container_name: webclipper
     ports:
       - "9069:9069"
+    environment:
+      WEBCLIPPER_DATA_DIR: /data
     volumes:
       - webclipper_data:/data
-      - /volume1/Recordings:/mnt/recordings
+      # Example recording source mounts
+      # - /mnt/user/recordings:/mnt/recordings:ro
+      # - /mnt/user/nvidia:/mnt/nvidia:ro
     restart: unless-stopped
 
 volumes:
