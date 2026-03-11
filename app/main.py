@@ -268,13 +268,16 @@ async def index():
 @app.get("/api/sources")
 async def get_sources():
     config = load_config()
+    sources_cfg = _clean_sources(config)
+    recordings = _scan_recordings(sources_cfg)
+    counts = {}
+    for recording in recordings:
+        label = recording["source"]
+        counts[label] = counts.get(label, 0) + 1
+
     sources = []
-    for s in config.get("sources", []):
-        count = 0
-        if os.path.isdir(s["path"]):
-            for root, dirs, files in os.walk(s["path"]):
-                count += sum(1 for f in files if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS)
-        sources.append({"label": s["label"], "path": s["path"], "count": count})
+    for s in sources_cfg:
+        sources.append({"label": s["label"], "path": s["path"], "count": counts.get(s["label"], 0)})
     return {"sources": sources}
 
 
@@ -307,8 +310,7 @@ async def remove_source(label: str):
 @app.get("/api/recordings")
 async def get_recordings(source: Optional[str] = None):
     config = load_config()
-    recordings = []
-    sources_to_scan = config.get("sources", [])
+    recordings = _scan_recordings(_clean_sources(config))
     if source:
         recordings = [item for item in recordings if item["source"] == source]
     return {"recordings": recordings}
