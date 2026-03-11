@@ -6,21 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      --bg: #0b1220;
-      --panel: #111a2b;
-      --panel-2: #162238;
-      --muted: #8ea1c0;
-      --text: #e8eefc;
-      --accent: #4ea1ff;
-      --danger: #ff5d73;
-      --border: #22314f;
+      --bg: #07101f;
+      --panel: #0f1b2f;
+      --panel-2: #14233c;
+      --border: #223657;
+      --text: #eef4ff;
+      --muted: #9eb2d4;
+      --accent: #5aa8ff;
+      --danger: #ff7b8f;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 20px;
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Inter, system-ui, Arial, sans-serif;
-      background: var(--bg);
+      background: linear-gradient(180deg, #04101f 0%, #07101f 100%);
       color: var(--text);
     }
 
@@ -32,20 +35,16 @@
 
     .sidebar {
       border-right: 1px solid var(--border);
-      background: #0a101c;
-      padding: 20px;
+      padding: 22px;
+      background: rgba(4, 12, 25, 0.92);
     }
 
     .main {
-      padding: 20px;
-    }
-
-    h1, h2, h3 {
-      margin: 0 0 14px;
+      padding: 22px;
     }
 
     .brand {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
       margin-bottom: 20px;
     }
@@ -53,81 +52,126 @@
     .panel {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 16px;
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
     }
 
-    .row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
+    h2, h3 {
+      margin: 0 0 16px;
+      font-weight: 800;
     }
 
-    .stack {
+    .field {
       display: grid;
-      gap: 10px;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .label {
+      font-size: 14px;
+      color: var(--muted);
     }
 
     input, select, button {
-      border-radius: 10px;
+      width: 100%;
       border: 1px solid var(--border);
       background: var(--panel-2);
       color: var(--text);
-      padding: 10px 12px;
+      border-radius: 14px;
+      padding: 12px 14px;
       font-size: 14px;
-    }
-
-    input, select {
-      width: 100%;
     }
 
     button {
       cursor: pointer;
-      background: #1a2a46;
+      font-weight: 700;
+      transition: 0.15s ease;
     }
 
     button:hover {
-      border-color: var(--accent);
+      filter: brightness(1.08);
     }
 
-    button.primary {
+    .btn-primary {
       background: var(--accent);
-      color: #06111f;
-      font-weight: 700;
+      color: #061220;
       border-color: transparent;
     }
 
-    button.danger {
-      background: rgba(255, 93, 115, 0.12);
-      color: #ffb6c0;
-      border-color: rgba(255, 93, 115, 0.35);
+    .btn-danger {
+      background: rgba(255, 123, 143, 0.08);
+      color: #ffc2cb;
+      border-color: rgba(255,123,143,.35);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-row > * {
+      flex: 1;
     }
 
     .muted {
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.4;
     }
 
     .tabs {
       display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 18px;
     }
 
     .tab {
-      padding: 10px 14px;
+      width: auto;
+      padding: 12px 18px;
     }
 
     .tab.active {
       background: var(--accent);
-      color: #06111f;
-      font-weight: 700;
+      color: #061220;
+      border-color: transparent;
     }
 
-    .hidden {
-      display: none !important;
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toolbar select {
+      max-width: 260px;
+    }
+
+    .status {
+      display: none;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      color: #ffd1d8;
+      background: rgba(255,123,143,.08);
+      border-color: rgba(255,123,143,.35);
+    }
+
+    .status.success {
+      color: #dcecff;
+      background: rgba(90,168,255,.08);
+      border-color: rgba(90,168,255,.35);
     }
 
     .grid {
@@ -135,42 +179,47 @@
       gap: 12px;
     }
 
-    .recording, .source-item, .clip-item {
+    .recording-card {
       display: grid;
-      gap: 8px;
+      grid-template-columns: 26px 160px 1fr auto;
+      gap: 12px;
+      align-items: center;
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 18px;
       padding: 12px;
     }
 
-    .recording {
-      grid-template-columns: 26px 160px 1fr auto;
-      align-items: center;
-    }
-
-    .clip-item {
+    .clip-card {
+      display: grid;
       grid-template-columns: 26px 1fr auto;
+      gap: 12px;
       align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 12px;
     }
 
     .thumb {
       width: 160px;
       height: 90px;
       object-fit: cover;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: #000;
     }
 
     .title {
-      font-weight: 700;
-      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 6px;
     }
 
     .meta {
-      font-size: 12px;
       color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: break-all;
     }
 
     .actions {
@@ -180,17 +229,22 @@
       justify-content: flex-end;
     }
 
+    .hidden {
+      display: none !important;
+    }
+
     .video-wrap {
-      background: #000;
-      border-radius: 14px;
+      border-radius: 18px;
       overflow: hidden;
       border: 1px solid var(--border);
-      margin-bottom: 12px;
+      background: #000;
+      margin-bottom: 14px;
     }
 
     video {
       width: 100%;
       max-height: 560px;
+      display: block;
       background: #000;
     }
 
@@ -200,63 +254,127 @@
       gap: 12px;
     }
 
-    .status {
-      margin-bottom: 12px;
-      padding: 10px 12px;
-      border-radius: 12px;
+    .sources-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .source-item {
+      background: var(--panel-2);
       border: 1px solid var(--border);
-      background: var(--panel);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .source-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 8, 18, 0.78);
       display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 9999;
     }
 
-    .status.show {
-      display: block;
+    .modal-backdrop.show {
+      display: flex;
     }
 
-    .status.error {
-      border-color: rgba(255, 93, 115, 0.35);
-      color: #ffd1d7;
-      background: rgba(255, 93, 115, 0.08);
+    .modal {
+      width: min(820px, 100%);
+      max-height: 85vh;
+      overflow: hidden;
+      background: #0d182b;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
     }
 
-    .status.success {
-      border-color: rgba(78, 161, 255, 0.35);
-      color: #dcecff;
-      background: rgba(78, 161, 255, 0.08);
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 20px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
     }
 
-    .source-path {
+    .modal-sub {
+      padding: 0 20px 16px;
+      color: var(--muted);
       word-break: break-all;
     }
 
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px 16px;
+    }
+
     .browser-list {
-      max-height: 220px;
       overflow: auto;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px;
-      background: #0d1627;
+      padding: 0 20px 20px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
     }
 
     .browser-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      padding: 8px;
-      border-radius: 8px;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
     }
 
-    .browser-item:hover {
-      background: #13203a;
+    .browser-name {
+      font-weight: 700;
+    }
+
+    .browser-empty {
+      color: var(--muted);
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.02);
     }
 
     @media (max-width: 1100px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
-      .recording { grid-template-columns: 26px 120px 1fr; }
-      .actions { grid-column: 1 / -1; justify-content: flex-start; }
-      .two-col { grid-template-columns: 1fr; }
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .recording-card {
+        grid-template-columns: 26px 120px 1fr;
+      }
+
+      .actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -267,55 +385,57 @@
 
       <div class="panel">
         <h3>Add Source</h3>
-        <div class="stack">
-          <input id="sourceLabel" placeholder="Source label, like Nvidia" />
-          <input id="sourcePath" placeholder="Container path, like /mnt/recordings/Nvidia" />
-          <div class="row">
-            <button id="browseRootBtn">Browse</button>
-            <button id="addSourceBtn" class="primary">Add Source</button>
-          </div>
-          <div class="muted">Use container paths, not Windows host paths.</div>
+
+        <div class="field">
+          <label class="label">Source Name</label>
+          <input id="sourceLabel" placeholder="Elgato" />
+        </div>
+
+        <div class="field">
+          <label class="label">Container Path</label>
+          <input id="sourcePath" placeholder="/mnt/Recordings/Elgato" />
+        </div>
+
+        <div class="btn-row">
+          <button id="browseSourceBtn">Browse</button>
+          <button id="addSourceBtn" class="btn-primary">Add Source</button>
+        </div>
+
+        <div class="muted" style="margin-top: 12px;">
+          Use paths that exist inside the container.
         </div>
       </div>
 
       <div class="panel">
         <h3>Settings</h3>
-        <div class="stack">
-          <label class="muted">Auto refresh</label>
+
+        <div class="field">
+          <label class="label">Auto Refresh</label>
           <select id="autoRefresh">
             <option value="true">Enabled</option>
             <option value="false">Disabled</option>
           </select>
+        </div>
 
-          <label class="muted">Refresh interval (seconds)</label>
+        <div class="field">
+          <label class="label">Refresh Interval (seconds)</label>
           <input id="refreshInterval" type="number" min="5" max="3600" />
+        </div>
 
-          <label class="muted">Clips save folder</label>
+        <div class="field">
+          <label class="label">Clips Save Folder</label>
           <input id="clipsPath" placeholder="/data/clips" />
+        </div>
 
-          <div class="row">
-            <button id="browseClipsBtn">Browse</button>
-            <button id="saveSettingsBtn" class="primary">Save</button>
-          </div>
+        <div class="btn-row">
+          <button id="browseClipsBtn">Browse</button>
+          <button id="saveSettingsBtn" class="btn-primary">Save</button>
         </div>
       </div>
 
       <div class="panel">
         <h3>Sources</h3>
-        <div id="sourcesList" class="grid"></div>
-      </div>
-
-      <div class="panel hidden" id="browserPanel">
-        <div class="row" style="justify-content: space-between;">
-          <h3>Folder Browser</h3>
-          <button id="closeBrowserBtn">Close</button>
-        </div>
-        <div class="muted" id="browserPath">/</div>
-        <div class="row" style="margin: 10px 0;">
-          <button id="browserUpBtn">Up</button>
-          <button id="browserChooseBtn" class="primary">Use This Folder</button>
-        </div>
-        <div class="browser-list" id="browserList"></div>
+        <div id="sourcesList" class="sources-list"></div>
       </div>
     </aside>
 
@@ -329,51 +449,52 @@
 
       <section id="recordingsTab">
         <div class="panel">
-          <div class="row">
-            <select id="sourceFilter" style="max-width: 260px;">
+          <div class="toolbar">
+            <select id="sourceFilter">
               <option value="">All Sources</option>
             </select>
             <button id="reloadRecordingsBtn">Reload</button>
-            <button id="deleteSelectedRecordingsBtn" class="danger">Delete Selected</button>
+            <button id="deleteSelectedRecordingsBtn" class="btn-danger">Delete Selected</button>
           </div>
         </div>
 
         <div class="panel hidden" id="playerPanel">
           <h3 id="playerTitle">Preview</h3>
+
           <div class="video-wrap">
             <video id="videoPlayer" controls preload="metadata"></video>
           </div>
 
           <div class="two-col">
-            <div class="stack">
-              <label class="muted">Clip title</label>
+            <div class="field">
+              <label class="label">Clip Title</label>
               <input id="clipTitle" placeholder="Clip title" />
             </div>
-            <div class="stack">
-              <label class="muted">Game</label>
+            <div class="field">
+              <label class="label">Game</label>
               <input id="clipGame" placeholder="Game name" value="Unknown" />
             </div>
           </div>
 
-          <div class="two-col" style="margin-top: 12px;">
-            <div class="stack">
-              <label class="muted">Start (seconds)</label>
+          <div class="two-col">
+            <div class="field">
+              <label class="label">Start (seconds)</label>
               <input id="clipStart" type="number" min="0" step="0.01" value="0" />
             </div>
-            <div class="stack">
-              <label class="muted">End (seconds)</label>
+            <div class="field">
+              <label class="label">End (seconds)</label>
               <input id="clipEnd" type="number" min="0" step="0.01" value="0" />
             </div>
           </div>
 
-          <div class="row" style="margin-top: 12px;">
+          <div class="toolbar">
             <button id="setStartBtn">Set Start From Current Time</button>
             <button id="setEndBtn">Set End From Current Time</button>
-            <label class="row" style="margin-left: auto;">
-              <input type="checkbox" id="losslessClip" checked style="width:auto;" />
-              <span class="muted">Lossless cut</span>
+            <label style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+              <input id="losslessClip" type="checkbox" checked style="width:auto;" />
+              <span class="label" style="margin:0;">Lossless Cut</span>
             </label>
-            <button id="createClipBtn" class="primary">Create Clip</button>
+            <button id="createClipBtn" class="btn-primary" style="width:auto;">Create Clip</button>
           </div>
         </div>
 
@@ -382,14 +503,33 @@
 
       <section id="clipsTab" class="hidden">
         <div class="panel">
-          <div class="row">
+          <div class="toolbar">
             <button id="reloadClipsBtn">Reload</button>
-            <button id="deleteSelectedClipsBtn" class="danger">Delete Selected</button>
+            <button id="deleteSelectedClipsBtn" class="btn-danger">Delete Selected</button>
           </div>
         </div>
+
         <div id="clipsList" class="grid"></div>
       </section>
     </main>
+  </div>
+
+  <div id="browserModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Folder Browser</h2>
+        <button id="closeBrowserBtn" style="width:auto;">Close</button>
+      </div>
+
+      <div id="browserPath" class="modal-sub">/</div>
+
+      <div class="modal-actions">
+        <button id="browserUpBtn" style="width:auto;">Up</button>
+        <button id="browserChooseBtn" class="btn-primary" style="width:auto;">Use This Folder</button>
+      </div>
+
+      <div id="browserList" class="browser-list"></div>
+    </div>
   </div>
 
   <script>
@@ -404,12 +544,21 @@
 
     const $ = (id) => document.getElementById(id);
 
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
     function showStatus(message, type = "success") {
       const box = $("statusBox");
       box.textContent = message;
       box.className = `status show ${type}`;
-      clearTimeout(showStatus._timer);
-      showStatus._timer = setTimeout(() => {
+      clearTimeout(showStatus._t);
+      showStatus._t = setTimeout(() => {
         box.className = "status";
       }, 3500);
     }
@@ -421,7 +570,7 @@
       });
 
       const text = await response.text();
-      let data;
+      let data = {};
       try {
         data = text ? JSON.parse(text) : {};
       } catch {
@@ -454,31 +603,32 @@
       document.querySelectorAll(".tab").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.tab === tabId);
       });
-
       $("recordingsTab").classList.toggle("hidden", tabId !== "recordingsTab");
       $("clipsTab").classList.toggle("hidden", tabId !== "clipsTab");
     }
 
     async function loadSources() {
       const data = await api("/api/sources");
-      const list = $("sourcesList");
+      const wrap = $("sourcesList");
       const filter = $("sourceFilter");
 
-      list.innerHTML = "";
+      wrap.innerHTML = "";
       filter.innerHTML = `<option value="">All Sources</option>`;
 
       for (const source of data.sources) {
-        const card = document.createElement("div");
-        card.className = "source-item";
-        card.innerHTML = `
-          <div class="title">${escapeHtml(source.label)}</div>
-          <div class="meta source-path">${escapeHtml(source.path)}</div>
-          <div class="meta">${source.count} recordings</div>
-          <div class="actions">
-            <button class="danger" data-remove-source="${escapeAttr(source.label)}">Remove</button>
+        const el = document.createElement("div");
+        el.className = "source-item";
+        el.innerHTML = `
+          <div class="source-head">
+            <div>
+              <div class="title">${escapeHtml(source.label)}</div>
+              <div class="meta">${escapeHtml(source.path)}</div>
+              <div class="meta">${source.count} recordings</div>
+            </div>
+            <button class="btn-danger" data-remove="${escapeHtml(source.label)}" style="width:auto;">Remove</button>
           </div>
         `;
-        list.appendChild(card);
+        wrap.appendChild(el);
 
         const opt = document.createElement("option");
         opt.value = source.label;
@@ -486,11 +636,10 @@
         filter.appendChild(opt);
       }
 
-      list.querySelectorAll("[data-remove-source]").forEach((btn) => {
+      wrap.querySelectorAll("[data-remove]").forEach((btn) => {
         btn.addEventListener("click", async () => {
-          const label = btn.getAttribute("data-remove-source");
+          const label = btn.getAttribute("data-remove");
           if (!confirm(`Remove source "${label}"?`)) return;
-
           try {
             await api(`/api/sources/${encodeURIComponent(label)}`, { method: "DELETE" });
             showStatus(`Removed source: ${label}`);
@@ -507,7 +656,6 @@
       $("autoRefresh").value = String(data.auto_refresh);
       $("refreshInterval").value = data.refresh_interval;
       $("clipsPath").value = data.clips_path || "/data/clips";
-
       resetAutoRefresh();
     }
 
@@ -520,7 +668,6 @@
           clips_path: $("clipsPath").value.trim(),
         }),
       });
-
       showStatus("Settings saved");
       resetAutoRefresh();
     }
@@ -535,30 +682,26 @@
       for (const rec of data.recordings) {
         const checked = state.selectedRecordingPaths.has(rec.path) ? "checked" : "";
         const card = document.createElement("div");
-        card.className = "recording";
-
-        const thumbUrl = `/api/recordings/thumbnail?path=${encodeURIComponent(rec.path)}&time=1`;
-
+        card.className = "recording-card";
         card.innerHTML = `
-          <input type="checkbox" data-recording-checkbox="${escapeAttr(rec.path)}" ${checked} style="width:auto;" />
-          <img class="thumb" src="${thumbUrl}" alt="" loading="lazy" />
+          <input type="checkbox" data-recording="${escapeHtml(rec.path)}" ${checked} style="width:auto;" />
+          <img class="thumb" src="/api/recordings/thumbnail?path=${encodeURIComponent(rec.path)}&time=1" alt="" loading="lazy" />
           <div>
             <div class="title">${escapeHtml(rec.name)}</div>
             <div class="meta">${escapeHtml(rec.source)} • ${fmtBytes(rec.size)}</div>
             <div class="meta">${fmtDate(rec.modified)}</div>
-            <div class="meta source-path">${escapeHtml(rec.path)}</div>
+            <div class="meta">${escapeHtml(rec.path)}</div>
           </div>
           <div class="actions">
-            <button data-preview="${escapeAttr(rec.path)}">Preview</button>
+            <button data-preview="${escapeHtml(rec.path)}" style="width:auto;">Preview</button>
           </div>
         `;
-
         list.appendChild(card);
       }
 
-      list.querySelectorAll("[data-recording-checkbox]").forEach((cb) => {
+      list.querySelectorAll("[data-recording]").forEach((cb) => {
         cb.addEventListener("change", () => {
-          const path = cb.getAttribute("data-recording-checkbox");
+          const path = cb.getAttribute("data-recording");
           if (cb.checked) state.selectedRecordingPaths.add(path);
           else state.selectedRecordingPaths.delete(path);
         });
@@ -568,9 +711,7 @@
         btn.addEventListener("click", async () => {
           const path = btn.getAttribute("data-preview");
           const rec = data.recordings.find((r) => r.path === path);
-          if (rec) {
-            await previewRecording(rec);
-          }
+          if (rec) await previewRecording(rec);
         });
       });
     }
@@ -581,15 +722,15 @@
       $("playerTitle").textContent = rec.name;
 
       const info = await api(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
-      const video = $("videoPlayer");
-      const url = `/stream?path=${encodeURIComponent(rec.path)}&transcode=${info.needs_transcode_preview ? "true" : "false"}`;
-      video.src = url;
-      video.load();
+      const player = $("videoPlayer");
+      player.src = `/stream?path=${encodeURIComponent(rec.path)}&transcode=${info.needs_transcode_preview ? "true" : "false"}`;
+      player.load();
 
       $("clipTitle").value = rec.name.replace(/\.[^.]+$/, "");
       $("clipGame").value = "Unknown";
       $("clipStart").value = "0";
       $("clipEnd").value = String(Number(info.duration || 0).toFixed(2));
+
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -632,39 +773,40 @@
       for (const clip of data.clips) {
         const checked = state.selectedClipPaths.has(clip.path) ? "checked" : "";
         const card = document.createElement("div");
-        card.className = "clip-item";
+        card.className = "clip-card";
         card.innerHTML = `
-          <input type="checkbox" data-clip-checkbox="${escapeAttr(clip.path)}" ${checked} style="width:auto;" />
+          <input type="checkbox" data-clip="${escapeHtml(clip.path)}" ${checked} style="width:auto;" />
           <div>
             <div class="title">${escapeHtml(clip.name)}</div>
             <div class="meta">${fmtBytes(clip.size)} • ${fmtDate(clip.modified)}</div>
-            <div class="meta source-path">${escapeHtml(clip.path)}</div>
+            <div class="meta">${escapeHtml(clip.path)}</div>
           </div>
           <div class="actions">
-            <button data-play-clip="${escapeAttr(clip.path)}">Play</button>
-            <a href="/api/clips/download?path=${encodeURIComponent(clip.path)}"><button>Download</button></a>
+            <button data-play="${escapeHtml(clip.path)}" style="width:auto;">Play</button>
+            <a href="/api/clips/download?path=${encodeURIComponent(clip.path)}">
+              <button type="button" style="width:auto;">Download</button>
+            </a>
           </div>
         `;
         list.appendChild(card);
       }
 
-      list.querySelectorAll("[data-clip-checkbox]").forEach((cb) => {
+      list.querySelectorAll("[data-clip]").forEach((cb) => {
         cb.addEventListener("change", () => {
-          const path = cb.getAttribute("data-clip-checkbox");
+          const path = cb.getAttribute("data-clip");
           if (cb.checked) state.selectedClipPaths.add(path);
           else state.selectedClipPaths.delete(path);
         });
       });
 
-      list.querySelectorAll("[data-play-clip]").forEach((btn) => {
+      list.querySelectorAll("[data-play]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const path = btn.getAttribute("data-play-clip");
-          const player = $("videoPlayer");
-          $("playerPanel").classList.remove("hidden");
+          const path = btn.getAttribute("data-play");
           switchTab("recordingsTab");
+          $("playerPanel").classList.remove("hidden");
           $("playerTitle").textContent = path.split("/").pop();
-          player.src = `/stream/clip?path=${encodeURIComponent(path)}`;
-          player.load();
+          $("videoPlayer").src = `/stream/clip?path=${encodeURIComponent(path)}`;
+          $("videoPlayer").load();
           window.scrollTo({ top: 0, behavior: "smooth" });
         });
       });
@@ -676,7 +818,6 @@
         showStatus("No recordings selected", "error");
         return;
       }
-
       if (!confirm(`Delete ${paths.length} recording(s)?`)) return;
 
       const result = await api("/api/recordings/delete", {
@@ -695,7 +836,6 @@
         showStatus("No clips selected", "error");
         return;
       }
-
       if (!confirm(`Delete ${paths.length} clip(s)?`)) return;
 
       const result = await api("/api/clips/delete", {
@@ -727,28 +867,49 @@
       await Promise.all([loadSources(), loadRecordings()]);
     }
 
+    function openBrowser(target) {
+      state.browserTarget = target;
+      $("browserModal").classList.add("show");
+      browse(target === "clips" ? ($("clipsPath").value.trim() || "/") : "/mnt");
+    }
+
+    function closeBrowser() {
+      $("browserModal").classList.remove("show");
+    }
+
     async function browse(path = "/") {
-      const data = await api(`/api/browse?path=${encodeURIComponent(path)}`);
-      state.browserCurrentPath = data.path;
-      $("browserPanel").classList.remove("hidden");
-      $("browserPath").textContent = data.path;
+      try {
+        const data = await api(`/api/browse?path=${encodeURIComponent(path)}`);
+        state.browserCurrentPath = data.path;
+        $("browserPath").textContent = data.path;
 
-      const list = $("browserList");
-      list.innerHTML = "";
+        const list = $("browserList");
+        list.innerHTML = "";
 
-      for (const dir of data.directories) {
-        const row = document.createElement("div");
-        row.className = "browser-item";
-        row.innerHTML = `
-          <div>${escapeHtml(dir.name)}</div>
-          <button data-open-dir="${escapeAttr(dir.path)}">Open</button>
-        `;
-        list.appendChild(row);
+        if (!data.directories.length) {
+          const empty = document.createElement("div");
+          empty.className = "browser-empty";
+          empty.textContent = "No folders found here. If you expected mounted media folders, your Docker volume mapping is probably missing.";
+          list.appendChild(empty);
+          return;
+        }
+
+        for (const dir of data.directories) {
+          const row = document.createElement("div");
+          row.className = "browser-item";
+          row.innerHTML = `
+            <div class="browser-name">${escapeHtml(dir.name)}</div>
+            <button data-open="${escapeHtml(dir.path)}" style="width:auto;">Open</button>
+          `;
+          list.appendChild(row);
+        }
+
+        list.querySelectorAll("[data-open]").forEach((btn) => {
+          btn.addEventListener("click", () => browse(btn.getAttribute("data-open")));
+        });
+      } catch (err) {
+        showStatus(err.message, "error");
       }
-
-      list.querySelectorAll("[data-open-dir]").forEach((btn) => {
-        btn.addEventListener("click", () => browse(btn.getAttribute("data-open-dir")));
-      });
     }
 
     function chooseBrowserPath() {
@@ -757,7 +918,7 @@
       } else if (state.browserTarget === "clips") {
         $("clipsPath").value = state.browserCurrentPath;
       }
-      $("browserPanel").classList.add("hidden");
+      closeBrowser();
     }
 
     function resetAutoRefresh() {
@@ -772,25 +933,12 @@
       if (enabled && seconds >= 5) {
         state.autoRefreshTimer = setInterval(async () => {
           try {
+            await loadSources();
             await loadRecordings();
             await loadClips();
-            await loadSources();
           } catch (_) {}
         }, seconds * 1000);
       }
-    }
-
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function escapeAttr(value) {
-      return escapeHtml(value);
     }
 
     function bindEvents() {
@@ -817,7 +965,6 @@
       $("reloadRecordingsBtn").addEventListener("click", async () => {
         try {
           await loadRecordings();
-          showStatus("Recordings reloaded");
         } catch (err) {
           showStatus(err.message, "error");
         }
@@ -826,7 +973,6 @@
       $("reloadClipsBtn").addEventListener("click", async () => {
         try {
           await loadClips();
-          showStatus("Clips reloaded");
         } catch (err) {
           showStatus(err.message, "error");
         }
@@ -872,34 +1018,19 @@
         }
       });
 
-      $("browseRootBtn").addEventListener("click", async () => {
-        state.browserTarget = "source";
-        try {
-          await browse("/");
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("browseClipsBtn").addEventListener("click", async () => {
-        state.browserTarget = "clips";
-        try {
-          await browse("/");
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
+      $("browseSourceBtn").addEventListener("click", () => openBrowser("source"));
+      $("browseClipsBtn").addEventListener("click", () => openBrowser("clips"));
+      $("closeBrowserBtn").addEventListener("click", closeBrowser);
       $("browserChooseBtn").addEventListener("click", chooseBrowserPath);
-      $("closeBrowserBtn").addEventListener("click", () => $("browserPanel").classList.add("hidden"));
+
       $("browserUpBtn").addEventListener("click", async () => {
         const current = state.browserCurrentPath || "/";
         const parent = current === "/" ? "/" : current.split("/").slice(0, -1).join("/") || "/";
-        try {
-          await browse(parent);
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
+        await browse(parent);
+      });
+
+      $("browserModal").addEventListener("click", (e) => {
+        if (e.target === $("browserModal")) closeBrowser();
       });
 
       $("autoRefresh").addEventListener("change", resetAutoRefresh);
