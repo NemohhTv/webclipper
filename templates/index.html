@@ -814,11 +814,6 @@ body {
       <div class="nav-item" data-page="clips" onclick="navigateTo('clips')">
         Clips <span class="count" id="clips-count">0</span>
       </div>
-      <div class="nav-sub">
-        <div class="nav-item" data-page="collections" onclick="navigateTo('collections')">
-          Collections <span class="count">0</span>
-        </div>
-      </div>
     </div>
     <div class="nav-divider"></div>
     <div class="nav-section">
@@ -841,6 +836,7 @@ body {
         <option value="">All Sources</option>
       </select>
       <input type="text" placeholder="Search..." id="search-input" oninput="filterRecordings()">
+      <button class="topbar-btn" id="delete-selected-btn" onclick="deleteSelectedRecordings()" style="display:none">Delete Selected</button>
       <button class="topbar-btn" onclick="loadRecordings()">Reload</button>
     </div>
     <div class="recordings-grid" id="recordings-grid"></div>
@@ -854,12 +850,6 @@ body {
       <input type="text" placeholder="Search..." id="clips-search" oninput="filterClips()">
     </div>
     <div class="clips-grid" id="clips-grid"></div>
-  </div>
-
-  <!-- ── Collections Page ─────────────────────────────────── -->
-  <div class="page" id="page-collections">
-    <div class="topbar"><h1>Collections</h1></div>
-    <div class="empty-msg">Collections coming soon. Organize your clips into groups.</div>
   </div>
 
   <!-- ── Settings Page ────────────────────────────────────── -->
@@ -893,6 +883,11 @@ body {
         <p style="margin-top:8px;font-size:13px">Enabled</p>
         <label>Refresh interval (seconds)</label>
         <input type="number" id="refresh-interval" value="20" min="5" max="300">
+        <label>Clips save folder</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="clips-path" placeholder="/app/data/clips" style="flex:1">
+          <button class="add-btn" onclick="openFolderBrowser('clips-path')" style="margin-top:0;white-space:nowrap">Browse</button>
+        </div>
         <button class="save-btn" onclick="saveSettings()">Save</button>
         <p style="margin-top:8px;font-size:11px;color:var(--text-dim)">Note: 20 seconds is usually fine. It only lists file names and metadata, it does not copy files.</p>
       </div>
@@ -1024,6 +1019,7 @@ body {
 let currentPage = 'recordings';
 let sources = [];
 let allRecordings = [];
+let selectedRecordings = new Set();
 let currentSourceFilter = '';
 let editorFile = null;
 let editorDuration = 0;
@@ -1137,6 +1133,16 @@ function filterRecordings() {
   renderRecordings(filtered);
 }
 
+function updateSelectedRecordingsUi() {
+  const btn = document.getElementById('delete-selected-btn');
+  if (selectedRecordings.size > 0) {
+    btn.style.display = '';
+    btn.textContent = `Delete Selected (${selectedRecordings.size})`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
 function renderRecordings(recs) {
   const grid = document.getElementById('recordings-grid');
   grid.innerHTML = '';
@@ -1148,8 +1154,12 @@ function renderRecordings(recs) {
     const card = document.createElement('div');
     card.className = 'rec-card';
     card.onclick = () => openEditor(r);
+    const checked = selectedRecordings.has(r.path) ? 'checked' : '';
     const thumbUrl = `/api/recordings/thumbnail?path=${encodeURIComponent(r.path)}&time=1`;
     card.innerHTML = `
+      <input type="checkbox" class="card-select" ${checked}
+             onclick="event.stopPropagation()"
+             onchange="toggleRecordingSelection('${r.path.replace(/'/g, "\\'")}')">
       <img class="thumb" src="${thumbUrl}" loading="lazy"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">
       <div class="thumb-placeholder" style="display:none">&#9654;</div>
@@ -1163,6 +1173,43 @@ function renderRecordings(recs) {
     `;
     grid.appendChild(card);
   });
+  updateSelectedRecordingsUi();
+}
+
+function toggleRecordingSelection(path) {
+  if (selectedRecordings.has(path)) selectedRecordings.delete(path);
+  else selectedRecordings.add(path);
+  updateSelectedRecordingsUi();
+}
+
+async function deleteSelectedRecordings() {
+  const paths = Array.from(selectedRecordings);
+  if (!paths.length) return;
+  if (!confirm(`Delete ${paths.length} selected recording(s)?`)) return;
+
+  try {
+    const res = await fetch('/api/recordings/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(`Delete failed: ${data.detail || 'Unknown error'}`, 'error');
+      return;
+    }
+
+    selectedRecordings.clear();
+    const failedCount = (data.failed || []).length;
+    if (failedCount) {
+      toast(`Deleted ${data.deleted}, failed ${failedCount}`, 'error');
+    } else {
+      toast(`Deleted ${data.deleted} recording(s)`, 'success');
+    }
+    await loadRecordings();
+  } catch (e) {
+    toast(`Delete failed: ${e.message}`, 'error');
+  }
 }
 
 // ── Editor ──────────────────────────────────────────────────
@@ -1181,13 +1228,6 @@ async function openEditor(rec) {
   const transcode = info.needs_transcode_preview ? '&transcode=1' : '';
   video.src = `/stream?path=${encodeURIComponent(rec.path)}${transcode}`;
   video.load();
-
-  const remuxHelp = document.getElementById('remux-help');
-  if (info.extension === '.mkv' || info.needs_transcode_preview) {
-    remuxHelp.textContent = 'This format may not preview reliably in Firefox. Use Remux to MP4 for a fast compatibility copy.';
-  } else {
-    remuxHelp.textContent = 'Remux creates an MP4 copy quickly without re-encoding (if codecs are MP4-compatible).';
-  }
 
   video.onloadedmetadata = () => {
     editorDuration = video.duration;
@@ -1375,31 +1415,6 @@ async function createClip() {
   btn.textContent = 'Create Clip';
 }
 
-async function remuxCurrentRecording() {
-  if (!editorFile) return;
-  const btn = document.getElementById('remux-btn');
-  btn.disabled = true;
-  btn.textContent = 'Remuxing...';
-
-  try {
-    const res = await fetch(`/api/recordings/remux?path=${encodeURIComponent(editorFile.path)}`, { method: 'POST' });
-    const data = await res.json();
-    if (res.ok) {
-      toast(`Remux complete: ${data.name} (${fmtSize(data.size)}). Original file deleted.`, 'success');
-      await loadClips();
-      closeEditor();
-      await loadRecordings();
-    } else {
-      toast(`Remux failed: ${data.detail || 'Unknown error'}`, 'error');
-    }
-  } catch (e) {
-    toast(`Remux failed: ${e.message}`, 'error');
-  }
-
-  btn.disabled = false;
-  btn.textContent = 'Remux to MP4 (fast, no re-encode)';
-}
-
 // ── Clips Page ──────────────────────────────────────────────
 let allClips = [];
 async function loadClips() {
@@ -1458,6 +1473,7 @@ async function loadSettings() {
   const config = await res.json();
   document.getElementById('auto-refresh-check').checked = config.auto_refresh;
   document.getElementById('refresh-interval').value = config.refresh_interval;
+  document.getElementById('clips-path').value = config.clips_path || '/app/data/clips';
   renderSourcesList(config.sources);
 }
 
@@ -1513,12 +1529,14 @@ async function removeSource(label) {
 async function saveSettings() {
   const autoRefresh = document.getElementById('auto-refresh-check').checked;
   const interval = parseInt(document.getElementById('refresh-interval').value) || 20;
+  const clipsPath = document.getElementById('clips-path').value.trim() || '/app/data/clips';
   await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval }),
+    body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval, clips_path: clipsPath }),
   });
   toast('Settings saved', 'success');
+  await loadClips();
   setupAutoRefresh();
 }
 
