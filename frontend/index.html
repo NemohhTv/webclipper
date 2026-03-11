@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebClipper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #0a0c10;
+      --bg-card: #12151c;
+      --bg-elevated: #181c24;
+      --border: #2a3142;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #f59e0b;
+      --accent-dim: #b45309;
+      --success: #10b981;
+      --danger: #ef4444;
+      --tag-mp4: #10b981;
+      --tag-mkv: #f59e0b;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Layout */
+    .app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+    }
+    .tab {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: color 0.2s, background 0.2s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px;
+      overflow: auto;
+    }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .toolbar select {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s, transform 0.05s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: #0a0c10; }
+    .btn-primary:hover { background: #fbbf24; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #34d399; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #f87171; }
+    .btn-ghost { background: var(--bg-elevated); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+
+    /* Recordings grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      border-color: var(--accent-dim);
+      box-shadow: var(--shadow);
+    }
+    .card-thumb {
+      position: relative;
+      aspect-ratio: 16/9;
+      background: var(--bg-deep);
+      overflow: hidden;
+    }
+    .card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-thumb .tag {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .tag.mp4 { background: var(--tag-mp4); color: #0a0c10; }
+    .tag.mkv { background: var(--tag-mkv); color: #0a0c10; }
+    .card-thumb .check {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-card);
+      cursor: pointer;
+    }
+    .card-thumb .check.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .card-thumb .check.checked::after {
+      content: '✓';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #0a0c10;
+    }
+    .card-body { padding: 14px; }
+    .card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .card-meta div { margin-top: 2px; }
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card-actions .btn { justify-content: center; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 24px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 95vw;
+      max-height: 95vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-weight: 600; font-size: 1.1rem; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { flex: 1; overflow: auto; padding: 20px; }
+
+    /* Editor layout */
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      min-height: 400px;
+    }
+    .editor-video-section { min-width: 0; }
+    .editor-video-wrap {
+      background: #000;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      margin-bottom: 16px;
+    }
+    .editor-video-wrap video {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .editor-timeline {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .editor-timeline .btn-ghost { padding: 6px 10px; font-size: 0.85rem; }
+    .editor-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .editor-range-wrap {
+      flex: 1;
+      min-width: 200px;
+    }
+    .editor-range-wrap input[type="range"] {
+      width: 100%;
+      height: 8px;
+      accent-color: var(--accent);
+    }
+    .editor-trim-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .editor-sidebar {
+      border-left: 1px solid var(--border);
+      padding-left: 24px;
+    }
+    .editor-sidebar .field { margin-bottom: 16px; }
+    .editor-sidebar label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .editor-sidebar input[type="text"],
+    .editor-sidebar select {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+    }
+    .editor-sidebar .btn-primary { width: 100%; margin-top: 8px; }
+
+    /* Clips grid (reuse card styles) */
+    .clip-card .card-actions { flex-direction: row; }
+
+    /* Settings */
+    .settings-section {
+      margin-bottom: 32px;
+    }
+    .settings-section h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      color: var(--text-muted);
+    }
+    .source-list { list-style: none; padding: 0; margin: 0; }
+    .source-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+    }
+    .source-list .path { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted); }
+    .source-list .label { font-weight: 500; }
+
+    /* Remux jobs panel */
+    .jobs-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 24px;
+    }
+    .jobs-panel h3 { font-size: 0.95rem; margin-bottom: 12px; }
+    .job-item {
+      padding: 10px 12px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .job-item .job-status { color: var(--text-muted); }
+    .job-item .job-progress { margin-top: 6px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .job-item .job-progress div { height: 100%; background: var(--accent); transition: width 0.2s; }
+
+    /* Folder browser */
+    .browser-list { list-style: none; padding: 0; margin: 0; }
+    .browser-list li {
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .browser-list li:hover { background: var(--bg-elevated); }
+    .browser-list .parent { color: var(--accent); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+    .empty-state p { margin-bottom: 16px; }
+
+    /* Loading */
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav">
+      <span class="logo">WebClipper</span>
+      <div class="tabs">
+        <button class="tab active" data-tab="recordings">Recordings</button>
+        <button class="tab" data-tab="clips">Clips</button>
+        <button class="tab" data-tab="settings">Settings</button>
+      </div>
+    </nav>
+
+    <main class="main">
+      <!-- Recordings view -->
+      <div id="view-recordings" class="view active">
+        <div class="toolbar">
+          <select id="source-filter">
+            <option value="">All Sources</option>
+          </select>
+          <button class="btn btn-ghost" id="reload-recordings">Reload</button>
+          <button class="btn btn-ghost" id="select-all">Select All</button>
+          <button class="btn btn-ghost" id="deselect-all">Deselect</button>
+          <button class="btn btn-success" id="remux-selected">Remux Selected</button>
+          <button class="btn btn-danger" id="delete-selected">Delete Selected</button>
+        </div>
+        <div id="recordings-grid" class="grid"></div>
+        <div class="jobs-panel">
+          <h3>Remux Jobs</h3>
+          <div id="remux-jobs-list"></div>
+        </div>
+      </div>
+
+      <!-- Clips view -->
+      <div id="view-clips" class="view">
+        <div class="toolbar">
+          <button class="btn btn-ghost" id="reload-clips">Reload</button>
+          <button class="btn btn-danger" id="delete-selected-clips">Delete Selected</button>
+        </div>
+        <div id="clips-grid" class="grid"></div>
+      </div>
+
+      <!-- Settings view -->
+      <div id="view-settings" class="view">
+        <div class="settings-section">
+          <h3>Sources</h3>
+          <ul id="sources-list" class="source-list"></ul>
+          <button class="btn btn-primary" id="add-source-btn">Add Source</button>
+        </div>
+        <div class="settings-section">
+          <h3>Clips output folder</h3>
+          <p class="text-muted" style="margin-bottom:8px;"><code id="clips-folder-display">/data/clips</code></p>
+          <button class="btn btn-ghost" id="browse-clips-folder">Browse...</button>
+        </div>
+        <div class="settings-section">
+          <h3>Refresh</h3>
+          <label><input type="checkbox" id="auto-refresh" /> Auto refresh</label>
+          <div style="margin-top:8px;">
+            <label>Interval (seconds)</label>
+            <input type="number" id="refresh-interval" value="60" min="10" style="width:100px;padding:8px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);" />
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Editor modal -->
+  <div id="editor-modal" class="modal-overlay">
+    <div class="modal" style="width: 900px;">
+      <div class="modal-header">
+        <span class="modal-title" id="editor-title">Edit clip</span>
+        <button class="modal-close" id="editor-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="editor-layout">
+          <div class="editor-video-section">
+            <div class="editor-video-wrap">
+              <video id="editor-video" controls></video>
+            </div>
+            <div class="editor-timeline">
+              <button class="btn btn-ghost" id="editor-play">Play</button>
+              <button class="btn btn-ghost" id="editor-back5">−5s</button>
+              <button class="btn btn-ghost" id="editor-fwd5">+5s</button>
+              <span class="editor-time" id="editor-time-display">0:00 / 0:00</span>
+              <div class="editor-range-wrap">
+                <input type="range" id="editor-seek" min="0" max="100" value="0" step="0.1" />
+              </div>
+            </div>
+            <div class="editor-trim-btns" style="margin-top:12px;">
+              <button class="btn btn-ghost" id="editor-set-start">Set Start</button>
+              <button class="btn btn-ghost" id="editor-set-end">Set End</button>
+              <button class="btn btn-ghost" id="editor-clear-trim">Clear Trim</button>
+            </div>
+            <div class="editor-timeline" style="margin-top:8px;">
+              <span class="editor-time">Start: <span id="editor-start-val">0</span>s — End: <span id="editor-end-val">0</span>s</span>
+            </div>
+          </div>
+          <div class="editor-sidebar">
+            <div class="field">
+              <label>Clip title</label>
+              <input type="text" id="editor-clip-title" placeholder="My clip" />
+            </div>
+            <div class="field">
+              <label>Game name</label>
+              <input type="text" id="editor-game" placeholder="Game" />
+            </div>
+            <div class="field">
+              <label>Export mode</label>
+              <select id="editor-export-mode">
+                <option value="fast_cut">Fast Cut / Remux</option>
+                <option value="accurate">Accurate Clip</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Output container</label>
+              <select id="editor-container">
+                <option value="mp4">MP4</option>
+                <option value="mov">MOV</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Audio mode</label>
+              <select id="editor-audio-mode">
+                <option value="separate">Keep tracks separate</option>
+                <option value="mix">Mix into one track</option>
+              </select>
+            </div>
+            <div class="field" id="editor-audio-tracks-wrap">
+              <label>Audio tracks</label>
+              <div id="editor-audio-tracks"></div>
+            </div>
+            <button class="btn btn-primary" id="editor-create-clip">Create clip</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Folder browser modal -->
+  <div id="browser-modal" class="modal-overlay">
+    <div class="modal" style="width: 480px;">
+      <div class="modal-header">
+        <span class="modal-title" id="browser-title">Select folder</span>
+        <button class="modal-close" id="browser-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="editor-time" style="margin-bottom:12px;"><code id="browser-current-path">/</code></p>
+        <ul id="browser-list" class="browser-list"></ul>
+        <div style="margin-top:16px;">
+          <button class="btn btn-primary" id="browser-select">Select this folder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+
+    // --- State ---
+    let recordingsList = [];
+    let clipsList = [];
+    let sourcesList = [];
+    let selectedRecordingPaths = new Set();
+    let selectedClipPaths = new Set();
+    let currentEditorRecording = null;
+    let editorStart = 0;
+    let editorEnd = 0;
+    let editorDuration = 0;
+    let browserCurrentPath = '/';
+    let browserCallback = null;
+
+    // --- Helpers ---
+    async function fetchJSON(url, opts = {}) {
+      const r = await fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', ...opts.headers } });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleString();
+    }
+
+    // --- Tabs ---
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'recordings') loadRecordings();
+        if (tab.dataset.tab === 'clips') loadClips();
+        if (tab.dataset.tab === 'settings') loadSettings();
+      });
+    });
+
+    // --- Recordings ---
+    async function loadSources() {
+      const data = await fetchJSON(API + '/sources');
+      sourcesList = data.sources || [];
+      const sel = document.getElementById('source-filter');
+      sel.innerHTML = '<option value="">All Sources</option>';
+      sourcesList.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.path;
+        opt.textContent = s.label;
+        sel.appendChild(opt);
+      });
+      return sourcesList;
+    }
+
+    async function loadRecordings() {
+      await loadSources();
+      const source = document.getElementById('source-filter').value || undefined;
+      const data = await fetchJSON(API + '/recordings' + (source ? '?source=' + encodeURIComponent(source) : ''));
+      recordingsList = data.recordings || [];
+      renderRecordings();
+      pollRemuxJobs();
+    }
+
+    function renderRecordings() {
+      const grid = document.getElementById('recordings-grid');
+      if (recordingsList.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No recordings. Add a source in Settings.</p></div>';
+        return;
+      }
+      grid.innerHTML = recordingsList.map(rec => {
+        const ext = (rec.extension || '').toUpperCase();
+        const isMkv = (rec.extension || '').toLowerCase() === 'mkv';
+        const thumbUrl = API + '/recordings/thumbnail?path=' + encodeURIComponent(rec.path);
+        const checked = selectedRecordingPaths.has(rec.path) ? ' checked' : '';
+        return `
+          <div class="card" data-path="${escapeHtml(rec.path)}">
+            <div class="card-thumb">
+              <div class="check${checked}" data-path="${escapeHtml(rec.path)}"></div>
+              <img src="${thumbUrl}" alt="" onerror="this.style.background='var(--bg-elevated)'" />
+              <span class="tag ${isMkv ? 'mkv' : 'mp4'}">${escapeHtml(ext) || 'VIDEO'}</span>
+            </div>
+            <div class="card-body">
+              <div class="card-title">${escapeHtml(rec.name)}</div>
+              <div class="card-meta">
+                <div>${escapeHtml(rec.source_label)}</div>
+                <div>${rec.size_human} · ${formatDate(rec.modified_iso)}</div>
+              </div>
+              <div class="card-actions">
+                <button class="btn btn-primary open-editor" data-path="${escapeHtml(rec.path)}">Open Editor</button>
+                ${isMkv ? `<button class="btn btn-success remux-one" data-path="${escapeHtml(rec.path)}">Remux</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('.check').forEach(el => {
+        el.addEventListener('click', () => {
+          const path = el.dataset.path;
+          if (selectedRecordingPaths.has(path)) selectedRecordingPaths.delete(path);
+          else selectedRecordingPaths.add(path);
+          el.classList.toggle('checked', selectedRecordingPaths.has(path));
+        });
+      });
+      grid.querySelectorAll('.open-editor').forEach(btn => {
+        btn.addEventListener('click', () => openEditor(btn.dataset.path));
+      });
+      grid.querySelectorAll('.remux-one').forEach(btn => {
+        btn.addEventListener('click', () => remuxPaths([btn.dataset.path]));
+      });
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    document.getElementById('reload-recordings').addEventListener('click', loadRecordings);
+    document.getElementById('source-filter').addEventListener('change', loadRecordings);
+
+    document.getElementById('select-all').addEventListener('click', () => {
+      recordingsList.forEach(r => selectedRecordingPaths.add(r.path));
+      renderRecordings();
+    });
+    document.getElementById('deselect-all').addEventListener('click', () => {
+      selectedRecordingPaths.clear();
+      renderRecordings();
+    });
+
+    document.getElementById('remux-selected').addEventListener('click', () => {
+      const paths = [...selectedRecordingPaths].filter(p => p.toLowerCase().endsWith('.mkv'));
+      if (paths.length === 0) { alert('Select at least one MKV file.'); return; }
+      remuxPaths(paths);
+    });
+
+    document.getElementById('delete-selected').addEventListener('click', async () => {
+      const paths = [...selectedRecordingPaths];
+      if (paths.length === 0) { alert('Select recordings to delete.'); return; }
+      if (!confirm(`Delete ${paths.length} file(s)?`)) return;
+      await fetch(API + '/recordings', { method: 'DELETE', body: JSON.stringify({ paths }) });
+      selectedRecordingPaths.clear();
+      loadRecordings();
+    });
+
+    function remuxPaths(paths) {
+      fetch(API + '/remux', { method: 'POST', body: JSON.stringify({ paths }) })
+        .then(r => r.json())
+        .then(() => { loadRecordings(); pollRemuxJobs(); });
+    }
+
+    function pollRemuxJobs() {
+      fetchJSON(API + '/jobs').then(data => {
+        const list = document.getElementById('remux-jobs-list');
+        const jobs = data.jobs || [];
+        if (jobs.length === 0) {
+          list.innerHTML = '<p class="editor-time">No remux jobs.</p>';
+          return;
+        }
+        list.innerHTML = jobs.map(j => {
+          const pct = j.total ? Math.round((j.done / j.total) * 100) : 0;
+          return `
+            <div class="job-item">
+              <span class="job-status">${j.status} — ${j.done}/${j.total}</span>
+              <div class="job-progress"><div style="width:${pct}%"></div></div>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+    setInterval(pollRemuxJobs, 2000);
+
+    // --- Editor ---
+    async function openEditor(path) {
+      currentEditorRecording = recordingsList.find(r => r.path === path) || { path, name: path };
+      editorStart = 0;
+      editorEnd = 0;
+      editorDuration = 0;
+      document.getElementById('editor-title').textContent = currentEditorRecording.name;
+      document.getElementById('editor-clip-title').value = '';
+      document.getElementById('editor-game').value = '';
+      document.getElementById('editor-video').src = '';
+      document.getElementById('editor-modal').classList.add('open');
+
+      const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
+      const video = document.getElementById('editor-video');
+      if (preview.url) {
+        video.src = preview.url;
+      } else {
+        video.src = API + '/stream/recording?path=' + encodeURIComponent(path);
+      }
+
+      const info = await fetchJSON(API + '/recordings/info?path=' + encodeURIComponent(path));
+      editorDuration = info.probe?.duration || 0;
+      editorEnd = editorDuration;
+      document.getElementById('editor-seek').max = editorDuration;
+      document.getElementById('editor-seek').value = 0;
+      updateEditorTimeDisplay();
+      updateEditorTrimDisplay();
+
+      const audioTracks = info.probe?.audio_tracks || [];
+      const wrap = document.getElementById('editor-audio-tracks');
+      wrap.innerHTML = audioTracks.map((a, i) => `
+        <label style="display:block;margin-bottom:6px;">
+          <input type="checkbox" class="editor-audio-cb" data-index="${i}" checked />
+          Track ${i + 1}: ${a.codec || 'audio'} ${a.channels ? a.channels + 'ch' : ''}
+        </label>
+      `).join('') || '<p class="editor-time">No audio tracks</p>';
+
+      video.onseeked = () => updateEditorTimeDisplay();
+      video.ontimeupdate = () => updateEditorTimeDisplay();
+    }
+
+    function updateEditorTimeDisplay() {
+      const v = document.getElementById('editor-video');
+      const t = v.currentTime || 0;
+      document.getElementById('editor-time-display').textContent = formatTime(t) + ' / ' + formatTime(editorDuration);
+      document.getElementById('editor-seek').value = t;
+    }
+
+    function updateEditorTrimDisplay() {
+      document.getElementById('editor-start-val').textContent = editorStart.toFixed(1);
+      document.getElementById('editor-end-val').textContent = editorEnd.toFixed(1);
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    document.getElementById('editor-seek').addEventListener('input', e => {
+      document.getElementById('editor-video').currentTime = parseFloat(e.target.value);
+    });
+
+    document.getElementById('editor-play').addEventListener('click', () => {
+      const v = document.getElementById('editor-video');
+      v.paused ? v.play() : v.pause();
+    });
+    document.getElementById('editor-back5').addEventListener('click', () => {
+      const v = document.getElementById('editor-video');
+      v.currentTime = Math.max(0, v.currentTime - 5);
+    });
+    document.getElementById('editor-fwd5').addEventListener('click', () => {
+      const v = document.getElementById('editor-video');
+      v.currentTime = Math.min(editorDuration, v.currentTime + 5);
+    });
+    document.getElementById('editor-set-start').addEventListener('click', () => {
+      editorStart = document.getElementById('editor-video').currentTime;
+      updateEditorTrimDisplay();
+    });
+    document.getElementById('editor-set-end').addEventListener('click', () => {
+      editorEnd = document.getElementById('editor-video').currentTime;
+      updateEditorTrimDisplay();
+    });
+    document.getElementById('editor-clear-trim').addEventListener('click', () => {
+      editorStart = 0;
+      editorEnd = editorDuration;
+      updateEditorTrimDisplay();
+    });
+
+    document.getElementById('editor-close').addEventListener('click', () => {
+      document.getElementById('editor-modal').classList.remove('open');
+    });
+    document.getElementById('editor-modal').addEventListener('click', e => {
+      if (e.target.id === 'editor-modal') document.getElementById('editor-modal').classList.remove('open');
+    });
+
+    document.getElementById('editor-create-clip').addEventListener('click', async () => {
+      if (!currentEditorRecording) return;
+      const indices = [];
+      document.querySelectorAll('.editor-audio-cb:checked').forEach(cb => indices.push(parseInt(cb.dataset.index, 10)));
+      const payload = {
+        source_path: currentEditorRecording.path,
+        clip_title: document.getElementById('editor-clip-title').value,
+        game_name: document.getElementById('editor-game').value,
+        start_sec: editorStart,
+        end_sec: editorEnd,
+        export_mode: document.getElementById('editor-export-mode').value,
+        output_container: document.getElementById('editor-container').value,
+        audio_mode: document.getElementById('editor-audio-mode').value,
+        selected_audio_indices: indices,
+        gains: {},
+      };
+      try {
+        await fetch(API + '/clips/create', { method: 'POST', body: JSON.stringify(payload) });
+        document.getElementById('editor-modal').classList.remove('open');
+        loadRecordings();
+        document.querySelector('.tab[data-tab="clips"]').click();
+      } catch (e) {
+        alert('Export failed: ' + e.message);
+      }
+    });
+
+    // --- Clips ---
+    async function loadClips() {
+      const data = await fetchJSON(API + '/clips');
+      clipsList = data.clips || [];
+      renderClips();
+    }
+
+    function renderClips() {
+      const grid = document.getElementById('clips-grid');
+      if (clipsList.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No clips yet. Open a recording and create a clip.</p></div>';
+        return;
+      }
+      grid.innerHTML = clipsList.map(clip => {
+        const checked = selectedClipPaths.has(clip.path) ? ' checked' : '';
+        return `
+          <div class="card clip-card">
+            <div class="card-thumb" style="aspect-ratio:16/9;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;position:relative;">
+              <div class="check${checked}" data-path="${escapeHtml(clip.path)}" style="position:absolute;top:8px;left:8px;"></div>
+              <span class="editor-time">${clip.size_human}</span>
+            </div>
+            <div class="card-body">
+              <div class="card-title">${escapeHtml(clip.title || clip.name)}</div>
+              <div class="card-meta">${clip.size_human} · ${formatDate(clip.modified_iso)}</div>
+              <div class="card-actions">
+                <a class="btn btn-ghost" href="${API + '/stream/clip?path=' + encodeURIComponent(clip.path)}" target="_blank">Play</a>
+                <a class="btn btn-ghost" href="${API + '/stream/clip?path=' + encodeURIComponent(clip.path)}" download>Download</a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      grid.querySelectorAll('.clip-card .check').forEach(el => {
+        el.addEventListener('click', () => {
+          const path = el.dataset.path;
+          if (selectedClipPaths.has(path)) selectedClipPaths.delete(path);
+          else selectedClipPaths.add(path);
+          el.classList.toggle('checked', selectedClipPaths.has(path));
+        });
+      });
+    }
+
+    document.getElementById('reload-clips').addEventListener('click', loadClips);
+    document.getElementById('delete-selected-clips').addEventListener('click', async () => {
+      const paths = [...selectedClipPaths];
+      if (paths.length === 0) { alert('Select clips to delete.'); return; }
+      if (!confirm(`Delete ${paths.length} clip(s)?`)) return;
+      await fetch(API + '/clips', { method: 'DELETE', body: JSON.stringify({ paths }) });
+      selectedClipPaths.clear();
+      loadClips();
+    });
+
+    // --- Settings ---
+    async function loadSettings() {
+      const [src, set] = await Promise.all([
+        fetchJSON(API + '/sources'),
+        fetchJSON(API + '/settings'),
+      ]);
+      sourcesList = src.sources || [];
+      const ul = document.getElementById('sources-list');
+      ul.innerHTML = sourcesList.map(s => `
+        <li>
+          <div><span class="label">${escapeHtml(s.label)}</span><br><span class="path">${escapeHtml(s.path)}</span></div>
+          <button class="btn btn-danger btn-delete-source" data-path="${escapeHtml(s.path)}">Remove</button>
+        </li>
+      `).join('') || '<li class="editor-time">No sources. Add one below.</li>';
+      ul.querySelectorAll('.btn-delete-source').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await fetch(API + '/sources', { method: 'DELETE', body: JSON.stringify({ path: btn.dataset.path }) });
+          loadSettings();
+        });
+      });
+
+      document.getElementById('clips-folder-display').textContent = set.clips_output_folder || '/data/clips';
+      document.getElementById('auto-refresh').checked = set.auto_refresh || false;
+      document.getElementById('refresh-interval').value = set.refresh_interval_seconds || 60;
+    }
+
+    document.getElementById('add-source-btn').addEventListener('click', () => openFolderBrowser('/', (path) => {
+      const label = path.split('/').filter(Boolean).pop() || 'Source';
+      fetch(API + '/sources', { method: 'POST', body: JSON.stringify({ label, path }) })
+        .then(() => loadSettings())
+        .then(() => loadRecordings());
+    }));
+
+    document.getElementById('browse-clips-folder').addEventListener('click', () => {
+      const display = document.getElementById('clips-folder-display').textContent;
+      openFolderBrowser(display || '/', async (path) => {
+        await fetch(API + '/settings', { method: 'PUT', body: JSON.stringify({ clips_output_folder: path }) });
+        loadSettings();
+      });
+    });
+
+    document.getElementById('auto-refresh').addEventListener('change', e => {
+      fetch(API + '/settings', { method: 'PUT', body: JSON.stringify({ auto_refresh: e.target.checked }) });
+    });
+    document.getElementById('refresh-interval').addEventListener('change', e => {
+      fetch(API + '/settings', { method: 'PUT', body: JSON.stringify({ refresh_interval_seconds: parseInt(e.target.value, 10) }) });
+    });
+
+    // --- Folder browser ---
+    function openFolderBrowser(initialPath, onSelect) {
+      browserCurrentPath = initialPath || '/';
+      browserCallback = onSelect;
+      document.getElementById('browser-title').textContent = 'Select folder';
+      document.getElementById('browser-modal').classList.add('open');
+      loadBrowserEntries();
+    }
+
+    async function loadBrowserEntries() {
+      document.getElementById('browser-current-path').textContent = browserCurrentPath;
+      const data = await fetchJSON(API + '/browse', { method: 'POST', body: JSON.stringify({ path: browserCurrentPath }) });
+      const list = document.getElementById('browser-list');
+      const entries = [];
+      if (data.parent) {
+        entries.push(`<li class="parent" data-path="${escapeHtml(data.parent)}">↩ ${escapeHtml(data.parent)}</li>`);
+      }
+      (data.entries || []).forEach(e => {
+        entries.push(`<li data-path="${escapeHtml(e.path)}" data-dir="true">📁 ${escapeHtml(e.name)}</li>`);
+      });
+      list.innerHTML = entries.join('');
+      list.querySelectorAll('li').forEach(li => {
+        li.addEventListener('click', () => {
+          const path = li.dataset.path;
+          if (li.classList.contains('parent')) {
+            browserCurrentPath = path;
+            loadBrowserEntries();
+          } else if (li.dataset.dir === 'true') {
+            browserCurrentPath = path;
+            loadBrowserEntries();
+          }
+        });
+      });
+    }
+
+    document.getElementById('browser-select').addEventListener('click', () => {
+      if (browserCallback) browserCallback(browserCurrentPath);
+      document.getElementById('browser-modal').classList.remove('open');
+    });
+    document.getElementById('browser-close').addEventListener('click', () => {
+      document.getElementById('browser-modal').classList.remove('open');
+    });
+
+    // --- Init ---
+    loadRecordings();
+  </script>
+</body>
+</html>

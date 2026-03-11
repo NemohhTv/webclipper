@@ -1,0 +1,1 @@
+# WebClipper app package

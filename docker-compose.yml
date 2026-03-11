@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  webclipper:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - webclipper-data:/data
+      # Mount your recordings folder (use your host path)
+      - /path/to/your/recordings:/mnt/recordings
+    environment:
+      - WEBCLIPPER_DATA=/data
+
+volumes:
+  webclipper-data:
