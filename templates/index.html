@@ -13,6 +13,7 @@
       --text: #eef4ff;
       --muted: #9eb2d4;
       --accent: #5aa8ff;
+      --accent-2: #39c46a;
       --danger: #ff7b8f;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius: 20px;
@@ -29,7 +30,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 320px 1fr;
+      grid-template-columns: 340px 1fr;
       min-height: 100vh;
     }
 
@@ -37,10 +38,12 @@
       border-right: 1px solid var(--border);
       padding: 22px;
       background: rgba(4, 12, 25, 0.92);
+      overflow-y: auto;
     }
 
     .main {
       padding: 22px;
+      overflow-y: auto;
     }
 
     .brand {
@@ -70,7 +73,7 @@
     }
 
     .label {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--muted);
     }
 
@@ -82,6 +85,19 @@
       border-radius: 14px;
       padding: 12px 14px;
       font-size: 14px;
+    }
+
+    input[type="checkbox"] {
+      width: auto;
+      accent-color: var(--accent);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      padding: 0;
+      accent-color: var(--accent);
+      background: transparent;
+      border: none;
     }
 
     button {
@@ -96,6 +112,12 @@
 
     .btn-primary {
       background: var(--accent);
+      color: #061220;
+      border-color: transparent;
+    }
+
+    .btn-success {
+      background: var(--accent-2);
       color: #061220;
       border-color: transparent;
     }
@@ -146,7 +168,7 @@
     }
 
     .toolbar select {
-      max-width: 260px;
+      max-width: 280px;
     }
 
     .status {
@@ -181,7 +203,7 @@
 
     .recording-card {
       display: grid;
-      grid-template-columns: 26px 160px 1fr auto;
+      grid-template-columns: 28px 180px 1fr auto;
       gap: 12px;
       align-items: center;
       background: var(--panel);
@@ -192,7 +214,7 @@
 
     .clip-card {
       display: grid;
-      grid-template-columns: 26px 1fr auto;
+      grid-template-columns: 28px 1fr auto;
       gap: 12px;
       align-items: center;
       background: var(--panel);
@@ -202,8 +224,8 @@
     }
 
     .thumb {
-      width: 160px;
-      height: 90px;
+      width: 180px;
+      height: 102px;
       object-fit: cover;
       border-radius: 12px;
       border: 1px solid var(--border);
@@ -233,27 +255,6 @@
       display: none !important;
     }
 
-    .video-wrap {
-      border-radius: 18px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: #000;
-      margin-bottom: 14px;
-    }
-
-    video {
-      width: 100%;
-      max-height: 560px;
-      display: block;
-      background: #000;
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
     .sources-list {
       display: grid;
       gap: 10px;
@@ -277,11 +278,11 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(2, 8, 18, 0.78);
+      background: rgba(2, 8, 18, 0.82);
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 18px;
       z-index: 9999;
     }
 
@@ -289,9 +290,9 @@
       display: flex;
     }
 
-    .modal {
-      width: min(820px, 100%);
-      max-height: 85vh;
+    .browser-modal {
+      width: min(840px, 100%);
+      max-height: 86vh;
       overflow: hidden;
       background: #0d182b;
       border: 1px solid var(--border);
@@ -341,19 +342,149 @@
       border-radius: 14px;
     }
 
-    .browser-name {
-      font-weight: 700;
+    .editor-modal {
+      width: min(1600px, 100%);
+      height: min(940px, 92vh);
+      background: #0b1830;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      overflow: hidden;
     }
 
-    .browser-empty {
+    .editor-main {
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      min-width: 0;
+      background: #091425;
+    }
+
+    .editor-topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+
+    .editor-file {
+      min-width: 0;
+    }
+
+    .editor-file .title {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .editor-video-wrap {
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .editor-video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .editor-controls {
+      padding: 14px 16px 10px;
+      border-top: 1px solid rgba(255,255,255,.05);
+      background: #0d1b34;
+    }
+
+    .player-bar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .timeline-block {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .timeline-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .timeline-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
       color: var(--muted);
-      padding: 16px;
-      border: 1px dashed var(--border);
-      border-radius: 14px;
-      background: rgba(255,255,255,.02);
     }
 
-    @media (max-width: 1100px) {
+    .editor-sidebar {
+      border-left: 1px solid rgba(255,255,255,.05);
+      background: #12264a;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .audio-track {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: rgba(0,0,0,.12);
+    }
+
+    .audio-head {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .audio-left {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .audio-name {
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .audio-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .tiny {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .time-badge {
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .editor-actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 1280px) {
       .layout {
         grid-template-columns: 1fr;
       }
@@ -364,7 +495,7 @@
       }
 
       .recording-card {
-        grid-template-columns: 26px 120px 1fr;
+        grid-template-columns: 28px 140px 1fr;
       }
 
       .actions {
@@ -372,8 +503,14 @@
         justify-content: flex-start;
       }
 
-      .two-col {
+      .editor-modal {
         grid-template-columns: 1fr;
+        height: 95vh;
+      }
+
+      .editor-sidebar {
+        border-left: 0;
+        border-top: 1px solid rgba(255,255,255,.05);
       }
     }
   </style>
@@ -393,7 +530,7 @@
 
         <div class="field">
           <label class="label">Container Path</label>
-          <input id="sourcePath" placeholder="/mnt/Recordings/Elgato" />
+          <input id="sourcePath" placeholder="/mnt/recordings/Elgato" />
         </div>
 
         <div class="btn-row">
@@ -457,47 +594,6 @@
             <button id="deleteSelectedRecordingsBtn" class="btn-danger">Delete Selected</button>
           </div>
         </div>
-
-        <div class="panel hidden" id="playerPanel">
-          <h3 id="playerTitle">Preview</h3>
-
-          <div class="video-wrap">
-            <video id="videoPlayer" controls preload="metadata"></video>
-          </div>
-
-          <div class="two-col">
-            <div class="field">
-              <label class="label">Clip Title</label>
-              <input id="clipTitle" placeholder="Clip title" />
-            </div>
-            <div class="field">
-              <label class="label">Game</label>
-              <input id="clipGame" placeholder="Game name" value="Unknown" />
-            </div>
-          </div>
-
-          <div class="two-col">
-            <div class="field">
-              <label class="label">Start (seconds)</label>
-              <input id="clipStart" type="number" min="0" step="0.01" value="0" />
-            </div>
-            <div class="field">
-              <label class="label">End (seconds)</label>
-              <input id="clipEnd" type="number" min="0" step="0.01" value="0" />
-            </div>
-          </div>
-
-          <div class="toolbar">
-            <button id="setStartBtn">Set Start From Current Time</button>
-            <button id="setEndBtn">Set End From Current Time</button>
-            <label style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-              <input id="losslessClip" type="checkbox" checked style="width:auto;" />
-              <span class="label" style="margin:0;">Lossless Cut</span>
-            </label>
-            <button id="createClipBtn" class="btn-primary" style="width:auto;">Create Clip</button>
-          </div>
-        </div>
-
         <div id="recordingsList" class="grid"></div>
       </section>
 
@@ -508,27 +604,141 @@
             <button id="deleteSelectedClipsBtn" class="btn-danger">Delete Selected</button>
           </div>
         </div>
-
         <div id="clipsList" class="grid"></div>
       </section>
     </main>
   </div>
 
   <div id="browserModal" class="modal-backdrop">
-    <div class="modal">
+    <div class="browser-modal">
       <div class="modal-header">
         <h2>Folder Browser</h2>
         <button id="closeBrowserBtn" style="width:auto;">Close</button>
       </div>
-
       <div id="browserPath" class="modal-sub">/</div>
-
       <div class="modal-actions">
         <button id="browserUpBtn" style="width:auto;">Up</button>
         <button id="browserChooseBtn" class="btn-primary" style="width:auto;">Use This Folder</button>
       </div>
-
       <div id="browserList" class="browser-list"></div>
+    </div>
+  </div>
+
+  <div id="editorModal" class="modal-backdrop">
+    <div class="editor-modal">
+      <div class="editor-main">
+        <div class="editor-topbar">
+          <div class="editor-file">
+            <div id="editorFileName" class="title">Preview</div>
+            <div id="editorFilePath" class="meta"></div>
+          </div>
+          <button id="closeEditorBtn" style="width:auto;">Close</button>
+        </div>
+
+        <div class="editor-video-wrap">
+          <video id="editorVideo" controls preload="metadata"></video>
+        </div>
+
+        <div class="editor-controls">
+          <div class="player-bar">
+            <div class="btn-row" style="max-width: 160px;">
+              <button id="jumpBackBtn">-5s</button>
+              <button id="jumpForwardBtn">+5s</button>
+            </div>
+            <input id="seekSlider" type="range" min="0" max="1000" value="0" />
+            <div class="time-badge">
+              <span id="currentTimeLabel">0:00</span> /
+              <span id="durationLabel">0:00</span>
+            </div>
+          </div>
+
+          <div class="timeline-block">
+            <div class="timeline-meta">
+              <span>Start Handle</span>
+              <span id="startLabel">0:00</span>
+            </div>
+            <input id="startSlider" type="range" min="0" max="0" step="0.01" value="0" />
+          </div>
+
+          <div class="timeline-block">
+            <div class="timeline-meta">
+              <span>End Handle</span>
+              <span id="endLabel">0:00</span>
+            </div>
+            <input id="endSlider" type="range" min="0" max="0" step="0.01" value="0" />
+          </div>
+
+          <div class="timeline-meta">
+            <span>Selected Range</span>
+            <span id="rangeLabel">0:00 → 0:00</span>
+          </div>
+        </div>
+
+        <div class="editor-controls" style="padding-top: 10px;">
+          <div class="toolbar">
+            <button id="setStartFromCurrentBtn">Set Start From Playhead</button>
+            <button id="setEndFromCurrentBtn">Set End From Playhead</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="editor-sidebar">
+        <h3 style="margin-bottom:10px;">Clip Output</h3>
+        <div class="muted" style="margin-bottom:16px;">
+          Fast Cut / Remux uses stream copy. Accurate Clip re-encodes and enables true audio mixing.
+        </div>
+
+        <div class="field">
+          <label class="label">Clip Title</label>
+          <input id="clipTitle" />
+        </div>
+
+        <div class="field">
+          <label class="label">Game</label>
+          <input id="clipGame" value="Unknown" />
+        </div>
+
+        <div class="field">
+          <label class="label">Mode</label>
+          <select id="clipMode">
+            <option value="copy">Fast Cut / Remux</option>
+            <option value="transcode">Accurate Clip</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label">Output Container</label>
+          <select id="clipContainer">
+            <option value="mp4">MP4</option>
+            <option value="mkv">MKV</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label">Audio Output</label>
+          <select id="audioMode">
+            <option value="keep">Keep selected tracks separate</option>
+            <option value="mix">Mix selected tracks into one track</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label">Start (seconds)</label>
+          <input id="clipStartInput" type="number" min="0" step="0.01" value="0" />
+        </div>
+
+        <div class="field">
+          <label class="label">End (seconds)</label>
+          <input id="clipEndInput" type="number" min="0" step="0.01" value="0" />
+        </div>
+
+        <h3 style="margin:18px 0 10px;">Audio Tracks</h3>
+        <div id="audioTracksWrap"></div>
+
+        <div class="editor-actions">
+          <button id="createClipBtn" class="btn-success">Create Clip</button>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -536,10 +746,13 @@
     const state = {
       selectedRecordingPaths: new Set(),
       selectedClipPaths: new Set(),
-      currentRecording: null,
       browserTarget: null,
       browserCurrentPath: "/",
       autoRefreshTimer: null,
+      currentRecording: null,
+      currentDuration: 0,
+      audioTracks: [],
+      audioGains: {},
     };
 
     const $ = (id) => document.getElementById(id);
@@ -560,7 +773,7 @@
       clearTimeout(showStatus._t);
       showStatus._t = setTimeout(() => {
         box.className = "status";
-      }, 3500);
+      }, 4000);
     }
 
     async function api(url, options = {}) {
@@ -597,6 +810,15 @@
 
     function fmtDate(ts) {
       return new Date(ts * 1000).toLocaleString();
+    }
+
+    function fmtTime(sec = 0) {
+      sec = Math.max(0, Number(sec || 0));
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.floor(sec % 60);
+      if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      return `${m}:${String(s).padStart(2, "0")}`;
     }
 
     function switchTab(tabId) {
@@ -684,8 +906,8 @@
         const card = document.createElement("div");
         card.className = "recording-card";
         card.innerHTML = `
-          <input type="checkbox" data-recording="${escapeHtml(rec.path)}" ${checked} style="width:auto;" />
-          <img class="thumb" src="/api/recordings/thumbnail?path=${encodeURIComponent(rec.path)}&time=1" alt="" loading="lazy" />
+          <input type="checkbox" data-recording="${escapeHtml(rec.path)}" ${checked} />
+          <img class="thumb" src="/api/recordings/thumbnail?path=${encodeURIComponent(rec.path)}&time_pos=1" alt="" loading="lazy" />
           <div>
             <div class="title">${escapeHtml(rec.name)}</div>
             <div class="meta">${escapeHtml(rec.source)} • ${fmtBytes(rec.size)}</div>
@@ -693,7 +915,7 @@
             <div class="meta">${escapeHtml(rec.path)}</div>
           </div>
           <div class="actions">
-            <button data-preview="${escapeHtml(rec.path)}" style="width:auto;">Preview</button>
+            <button data-preview="${escapeHtml(rec.path)}" style="width:auto;">Open Editor</button>
           </div>
         `;
         list.appendChild(card);
@@ -711,58 +933,9 @@
         btn.addEventListener("click", async () => {
           const path = btn.getAttribute("data-preview");
           const rec = data.recordings.find((r) => r.path === path);
-          if (rec) await previewRecording(rec);
+          if (rec) await openEditor(rec);
         });
       });
-    }
-
-    async function previewRecording(rec) {
-      state.currentRecording = rec;
-      $("playerPanel").classList.remove("hidden");
-      $("playerTitle").textContent = rec.name;
-
-      const info = await api(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
-      const player = $("videoPlayer");
-      player.src = `/stream?path=${encodeURIComponent(rec.path)}&transcode=${info.needs_transcode_preview ? "true" : "false"}`;
-      player.load();
-
-      $("clipTitle").value = rec.name.replace(/\.[^.]+$/, "");
-      $("clipGame").value = "Unknown";
-      $("clipStart").value = "0";
-      $("clipEnd").value = String(Number(info.duration || 0).toFixed(2));
-
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    async function createClip() {
-      if (!state.currentRecording) {
-        showStatus("Pick a recording first", "error");
-        return;
-      }
-
-      const payload = {
-        filepath: state.currentRecording.path,
-        source_label: state.currentRecording.source,
-        start: Number($("clipStart").value || 0),
-        end: Number($("clipEnd").value || 0),
-        title: $("clipTitle").value.trim() || "clip",
-        game: $("clipGame").value.trim() || "Unknown",
-        lossless: $("losslessClip").checked,
-      };
-
-      if (payload.end <= payload.start) {
-        showStatus("End time must be greater than start time", "error");
-        return;
-      }
-
-      await api("/api/clip", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      showStatus("Clip created");
-      await loadClips();
-      switchTab("clipsTab");
     }
 
     async function loadClips() {
@@ -772,13 +945,14 @@
 
       for (const clip of data.clips) {
         const checked = state.selectedClipPaths.has(clip.path) ? "checked" : "";
+        const modeLabel = clip.meta?.mode ? ` • ${clip.meta.mode}` : "";
         const card = document.createElement("div");
         card.className = "clip-card";
         card.innerHTML = `
-          <input type="checkbox" data-clip="${escapeHtml(clip.path)}" ${checked} style="width:auto;" />
+          <input type="checkbox" data-clip="${escapeHtml(clip.path)}" ${checked} />
           <div>
             <div class="title">${escapeHtml(clip.name)}</div>
-            <div class="meta">${fmtBytes(clip.size)} • ${fmtDate(clip.modified)}</div>
+            <div class="meta">${fmtBytes(clip.size)} • ${fmtDate(clip.modified)}${modeLabel}</div>
             <div class="meta">${escapeHtml(clip.path)}</div>
           </div>
           <div class="actions">
@@ -802,12 +976,7 @@
       list.querySelectorAll("[data-play]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const path = btn.getAttribute("data-play");
-          switchTab("recordingsTab");
-          $("playerPanel").classList.remove("hidden");
-          $("playerTitle").textContent = path.split("/").pop();
-          $("videoPlayer").src = `/stream/clip?path=${encodeURIComponent(path)}`;
-          $("videoPlayer").load();
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          window.open(`/stream/clip?path=${encodeURIComponent(path)}`, "_blank");
         });
       });
     }
@@ -870,7 +1039,7 @@
     function openBrowser(target) {
       state.browserTarget = target;
       $("browserModal").classList.add("show");
-      browse(target === "clips" ? ($("clipsPath").value.trim() || "/") : "/mnt/Recordings");
+      browse(target === "clips" ? ($("clipsPath").value.trim() || "/") : "/mnt/recordings");
     }
 
     function closeBrowser() {
@@ -888,8 +1057,8 @@
 
         if (!data.directories.length) {
           const empty = document.createElement("div");
-          empty.className = "browser-empty";
-          empty.textContent = "No folders found here. If you expected mounted media folders, your Docker volume mapping is missing or the host path is wrong.";
+          empty.className = "source-item";
+          empty.innerHTML = `<div class="muted">No folders found here.</div>`;
           list.appendChild(empty);
           return;
         }
@@ -898,7 +1067,10 @@
           const row = document.createElement("div");
           row.className = "browser-item";
           row.innerHTML = `
-            <div class="browser-name">${escapeHtml(dir.name)}</div>
+            <div>
+              <div class="title" style="margin:0;">${escapeHtml(dir.name)}</div>
+              <div class="meta">${escapeHtml(dir.path)}</div>
+            </div>
             <button data-open="${escapeHtml(dir.path)}" style="width:auto;">Open</button>
           `;
           list.appendChild(row);
@@ -939,6 +1111,184 @@
           } catch (_) {}
         }, seconds * 1000);
       }
+    }
+
+    function syncTimeUi() {
+      const start = Number($("startSlider").value || 0);
+      const end = Number($("endSlider").value || 0);
+      $("startLabel").textContent = fmtTime(start);
+      $("endLabel").textContent = fmtTime(end);
+      $("rangeLabel").textContent = `${fmtTime(start)} → ${fmtTime(end)}`;
+      $("clipStartInput").value = start.toFixed(2);
+      $("clipEndInput").value = end.toFixed(2);
+    }
+
+    function clampTimeline() {
+      let start = Number($("startSlider").value || 0);
+      let end = Number($("endSlider").value || 0);
+      if (start > end) {
+        const active = document.activeElement;
+        if (active === $("startSlider")) end = start;
+        else start = end;
+      }
+      $("startSlider").value = start;
+      $("endSlider").value = end;
+      syncTimeUi();
+    }
+
+    function syncFromInputs() {
+      let start = Number($("clipStartInput").value || 0);
+      let end = Number($("clipEndInput").value || 0);
+      start = Math.max(0, Math.min(start, state.currentDuration || 0));
+      end = Math.max(0, Math.min(end, state.currentDuration || 0));
+      if (start > end) start = end;
+      $("startSlider").value = start;
+      $("endSlider").value = end;
+      syncTimeUi();
+    }
+
+    function updateSeekUi() {
+      const video = $("editorVideo");
+      const duration = state.currentDuration || 0;
+      const current = Number(video.currentTime || 0);
+      $("currentTimeLabel").textContent = fmtTime(current);
+      $("durationLabel").textContent = fmtTime(duration);
+      $("seekSlider").value = duration > 0 ? Math.round((current / duration) * 1000) : 0;
+    }
+
+    function renderAudioTracks(tracks) {
+      const wrap = $("audioTracksWrap");
+      wrap.innerHTML = "";
+      state.audioGains = {};
+
+      if (!tracks.length) {
+        wrap.innerHTML = `<div class="muted">No audio tracks detected.</div>`;
+        return;
+      }
+
+      for (const track of tracks) {
+        state.audioGains[String(track.stream_index)] = 0;
+
+        const titleBits = [];
+        titleBits.push(`Track ${track.track_number}`);
+        if (track.title) titleBits.push(track.title);
+        if (track.language) titleBits.push(track.language);
+
+        const subBits = [];
+        if (track.codec) subBits.push(track.codec);
+        if (track.channels) subBits.push(`${track.channels}ch`);
+        if (track.sample_rate) subBits.push(`${track.sample_rate} Hz`);
+
+        const row = document.createElement("div");
+        row.className = "audio-track";
+        row.innerHTML = `
+          <div class="audio-head">
+            <div class="audio-left">
+              <input type="checkbox" data-audio-check="${track.stream_index}" checked />
+              <div>
+                <div class="audio-name">${escapeHtml(titleBits.join(" • "))}</div>
+                <div class="audio-sub">${escapeHtml(subBits.join(" • "))}</div>
+              </div>
+            </div>
+            <div class="tiny">Gain</div>
+          </div>
+          <input type="range" min="-24" max="24" step="0.5" value="0" data-audio-gain="${track.stream_index}" />
+          <div class="tiny" id="gainLabel_${track.stream_index}">0 dB</div>
+        `;
+        wrap.appendChild(row);
+      }
+
+      wrap.querySelectorAll("[data-audio-gain]").forEach((slider) => {
+        slider.addEventListener("input", () => {
+          const key = slider.getAttribute("data-audio-gain");
+          const value = Number(slider.value || 0);
+          state.audioGains[key] = value;
+          $(`gainLabel_${key}`).textContent = `${value} dB`;
+        });
+      });
+    }
+
+    function selectedAudioTracks() {
+      return [...document.querySelectorAll("[data-audio-check]:checked")]
+        .map((el) => Number(el.getAttribute("data-audio-check")));
+    }
+
+    async function openEditor(rec) {
+      state.currentRecording = rec;
+      $("editorModal").classList.add("show");
+      $("editorFileName").textContent = rec.name;
+      $("editorFilePath").textContent = rec.path;
+      $("clipTitle").value = rec.name.replace(/\.[^.]+$/, "");
+      $("clipGame").value = "Unknown";
+      $("clipMode").value = "copy";
+      $("clipContainer").value = "mp4";
+      $("audioMode").value = "keep";
+
+      const info = await api(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
+      state.currentDuration = Number(info.duration || 0);
+      state.audioTracks = info.audio_tracks || [];
+
+      $("startSlider").max = state.currentDuration;
+      $("endSlider").max = state.currentDuration;
+      $("startSlider").value = 0;
+      $("endSlider").value = state.currentDuration;
+      syncTimeUi();
+      renderAudioTracks(state.audioTracks);
+
+      const url = `/stream?path=${encodeURIComponent(rec.path)}&transcode=${info.needs_transcode_preview ? "true" : "false"}`;
+      const video = $("editorVideo");
+      video.src = url;
+      video.load();
+      updateSeekUi();
+    }
+
+    function closeEditor() {
+      $("editorModal").classList.remove("show");
+      const video = $("editorVideo");
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    }
+
+    async function createClip() {
+      if (!state.currentRecording) {
+        showStatus("No recording loaded", "error");
+        return;
+      }
+
+      const selectedTracks = selectedAudioTracks();
+      const payload = {
+        filepath: state.currentRecording.path,
+        source_label: state.currentRecording.source,
+        start: Number($("clipStartInput").value || 0),
+        end: Number($("clipEndInput").value || 0),
+        title: $("clipTitle").value.trim() || "clip",
+        game: $("clipGame").value.trim() || "Unknown",
+        mode: $("clipMode").value,
+        container: $("clipContainer").value,
+        selected_audio_tracks: selectedTracks,
+        audio_mode: $("audioMode").value,
+        audio_gains: state.audioGains,
+      };
+
+      if (payload.end <= payload.start) {
+        showStatus("End time must be greater than start time", "error");
+        return;
+      }
+
+      if (payload.audio_mode === "mix" && payload.mode !== "transcode" && selectedTracks.length > 1) {
+        showStatus("Audio mixing requires Accurate Clip mode", "error");
+        return;
+      }
+
+      const result = await api("/api/clip", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      showStatus(`Clip created: ${result.clip.name}`);
+      await loadClips();
+      switchTab("clipsTab");
     }
 
     function bindEvents() {
@@ -1002,22 +1352,6 @@
         }
       });
 
-      $("setStartBtn").addEventListener("click", () => {
-        $("clipStart").value = Number($("videoPlayer").currentTime || 0).toFixed(2);
-      });
-
-      $("setEndBtn").addEventListener("click", () => {
-        $("clipEnd").value = Number($("videoPlayer").currentTime || 0).toFixed(2);
-      });
-
-      $("createClipBtn").addEventListener("click", async () => {
-        try {
-          await createClip();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
       $("browseSourceBtn").addEventListener("click", () => openBrowser("source"));
       $("browseClipsBtn").addEventListener("click", () => openBrowser("clips"));
       $("closeBrowserBtn").addEventListener("click", closeBrowser);
@@ -1031,6 +1365,53 @@
 
       $("browserModal").addEventListener("click", (e) => {
         if (e.target === $("browserModal")) closeBrowser();
+      });
+
+      $("closeEditorBtn").addEventListener("click", closeEditor);
+      $("editorModal").addEventListener("click", (e) => {
+        if (e.target === $("editorModal")) closeEditor();
+      });
+
+      $("setStartFromCurrentBtn").addEventListener("click", () => {
+        $("startSlider").value = Number($("editorVideo").currentTime || 0).toFixed(2);
+        clampTimeline();
+      });
+
+      $("setEndFromCurrentBtn").addEventListener("click", () => {
+        $("endSlider").value = Number($("editorVideo").currentTime || 0).toFixed(2);
+        clampTimeline();
+      });
+
+      $("startSlider").addEventListener("input", clampTimeline);
+      $("endSlider").addEventListener("input", clampTimeline);
+      $("clipStartInput").addEventListener("change", syncFromInputs);
+      $("clipEndInput").addEventListener("change", syncFromInputs);
+
+      $("seekSlider").addEventListener("input", () => {
+        const duration = state.currentDuration || 0;
+        const ratio = Number($("seekSlider").value || 0) / 1000;
+        $("editorVideo").currentTime = duration * ratio;
+      });
+
+      $("jumpBackBtn").addEventListener("click", () => {
+        $("editorVideo").currentTime = Math.max(0, Number($("editorVideo").currentTime || 0) - 5);
+      });
+
+      $("jumpForwardBtn").addEventListener("click", () => {
+        $("editorVideo").currentTime = Math.min(state.currentDuration || 0, Number($("editorVideo").currentTime || 0) + 5);
+      });
+
+      $("editorVideo").addEventListener("timeupdate", updateSeekUi);
+      $("editorVideo").addEventListener("loadedmetadata", () => {
+        updateSeekUi();
+      });
+
+      $("createClipBtn").addEventListener("click", async () => {
+        try {
+          await createClip();
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
       });
 
       $("autoRefresh").addEventListener("change", resetAutoRefresh);
