@@ -85,18 +85,9 @@ body {
   color: var(--text-dim);
 }
 .nav-item.active .count { color: var(--accent); }
-.nav-sub {
-  padding-left: 20px;
-}
-.nav-sub .nav-item {
-  font-size: 12px;
-  padding: 5px 12px;
-}
-.nav-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 8px;
-}
+.nav-sub { padding-left: 20px; }
+.nav-sub .nav-item { font-size: 12px; padding: 5px 12px; }
+.nav-divider { height: 1px; background: var(--border); margin: 8px; }
 
 /* ── Main Content ────────────────────────────────────────── */
 .main {
@@ -115,10 +106,7 @@ body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.topbar h1 {
-  font-size: 18px;
-  font-weight: 600;
-}
+.topbar h1 { font-size: 18px; font-weight: 600; }
 .topbar .spacer { flex: 1; }
 .topbar select {
   background: var(--bg-input);
@@ -193,9 +181,7 @@ body {
   color: var(--text-dim);
   font-size: 36px;
 }
-.rec-card .card-info {
-  padding: 10px 12px;
-}
+.rec-card .card-info { padding: 10px 12px; }
 .rec-card .card-name {
   font-size: 13px;
   font-weight: 500;
@@ -253,7 +239,6 @@ body {
   flex-direction: column;
 }
 .editor-overlay.visible { display: flex; }
-
 .editor-top {
   padding: 8px 16px;
   border-bottom: 1px solid var(--border);
@@ -273,13 +258,11 @@ body {
   font-size: 13px;
 }
 .editor-top .close-btn:hover { border-color: var(--accent); }
-
 .editor-body {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
-
 .editor-video-area {
   flex: 1;
   display: flex;
@@ -446,16 +429,8 @@ body {
   overflow-y: auto;
   flex-shrink: 0;
 }
-.clip-panel h3 {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.clip-panel .subtitle {
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-bottom: 16px;
-}
+.clip-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.clip-panel .subtitle { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
 .clip-panel label {
   display: block;
   font-size: 12px;
@@ -473,35 +448,12 @@ body {
   border-radius: 6px;
   font-size: 13px;
 }
-.clip-panel .time-inputs {
-  display: flex;
-  gap: 8px;
-}
-.clip-panel .time-inputs .time-group {
-  flex: 1;
-}
-.clip-panel .time-inputs .time-group .set-btn {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  background: var(--accent);
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 11px;
-  margin-left: 4px;
-  vertical-align: middle;
-}
+.clip-panel .time-inputs { display: flex; gap: 8px; }
+.clip-panel .time-inputs .time-group { flex: 1; }
 
 /* ── Audio Tracks ─────────────────────────────────────────── */
-.audio-tracks {
-  margin-top: 16px;
-}
-.audio-tracks h4 {
-  font-size: 13px;
-  margin-bottom: 8px;
-}
+.audio-tracks { margin-top: 16px; }
+.audio-tracks h4 { font-size: 13px; margin-bottom: 8px; }
 .audio-track-item {
   display: flex;
   align-items: center;
@@ -509,19 +461,9 @@ body {
   margin-bottom: 8px;
   font-size: 12px;
 }
-.audio-track-item input[type="checkbox"] {
-  accent-color: var(--accent);
-}
-.audio-track-item input[type="range"] {
-  flex: 1;
-  accent-color: var(--accent);
-  height: 4px;
-}
-.audio-track-item .vol-label {
-  min-width: 35px;
-  text-align: right;
-  color: var(--text-dim);
-}
+.audio-track-item input[type="checkbox"] { accent-color: var(--accent); }
+.audio-track-item input[type="range"] { flex: 1; accent-color: var(--accent); height: 4px; }
+.audio-track-item .vol-label { min-width: 35px; text-align: right; color: var(--text-dim); }
 
 .create-clip-btn {
   width: 100%;
@@ -578,11 +520,7 @@ body {
   justify-content: space-between;
   margin-top: 2px;
 }
-.clip-card .clip-actions {
-  padding: 6px 12px 10px;
-  display: flex;
-  gap: 6px;
-}
+.clip-card .clip-actions { padding: 6px 12px 10px; display: flex; gap: 6px; }
 .clip-card .clip-btn {
   flex: 1;
   padding: 5px;
@@ -618,15 +556,8 @@ body {
   max-width: 500px;
   flex: 1;
 }
-.settings-card h3 {
-  font-size: 15px;
-  margin-bottom: 4px;
-}
-.settings-card .desc {
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-bottom: 16px;
-}
+.settings-card h3 { font-size: 15px; margin-bottom: 4px; }
+.settings-card .desc { font-size: 12px; color: var(--text-dim); margin-bottom: 16px; }
 .settings-card label {
   display: block;
   font-size: 13px;
@@ -666,9 +597,7 @@ body {
   font-weight: 500;
   margin-top: 12px;
 }
-.source-list {
-  margin-top: 12px;
-}
+.source-list { margin-top: 12px; }
 .source-item {
   display: flex;
   align-items: center;
@@ -679,14 +608,8 @@ body {
   border-radius: 6px;
   margin-bottom: 6px;
 }
-.source-item .source-info .source-label {
-  font-size: 13px;
-  font-weight: 500;
-}
-.source-item .source-info .source-path {
-  font-size: 11px;
-  color: var(--text-dim);
-}
+.source-item .source-info .source-label { font-size: 13px; font-weight: 500; }
+.source-item .source-info .source-path { font-size: 11px; color: var(--text-dim); }
 .source-item .remove-btn {
   background: var(--red);
   border: none;
@@ -704,6 +627,136 @@ body {
   margin-top: 8px;
 }
 .settings-check input { accent-color: var(--accent); }
+
+/* ── Folder Browser Modal ─────────────────────────────────── */
+.folder-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.folder-modal-backdrop.visible { display: flex; }
+.folder-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 520px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.folder-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.folder-modal-header h3 { font-size: 15px; font-weight: 600; }
+.folder-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.folder-modal-close:hover { color: var(--text); background: var(--accent-dim); }
+.folder-breadcrumb {
+  padding: 10px 20px;
+  background: var(--bg-input);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  flex-wrap: wrap;
+  min-height: 40px;
+}
+.folder-breadcrumb .crumb {
+  color: var(--accent);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.folder-breadcrumb .crumb:hover { background: var(--accent-dim); }
+.folder-breadcrumb .crumb.current { color: var(--text); cursor: default; }
+.folder-breadcrumb .crumb.current:hover { background: none; }
+.folder-breadcrumb .sep { color: var(--text-dim); }
+.folder-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 200px;
+}
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background .1s;
+}
+.folder-item:hover { background: var(--accent-dim); }
+.folder-item .folder-icon { font-size: 18px; flex-shrink: 0; }
+.folder-item .folder-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder-empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.folder-loading {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.folder-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.folder-modal-footer .selected-path {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.folder-modal-footer .folder-cancel-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.folder-modal-footer .folder-cancel-btn:hover { border-color: var(--accent); }
+.folder-modal-footer .folder-select-btn {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.folder-modal-footer .folder-select-btn:hover { opacity: .9; }
 
 /* ── Collections Page ─────────────────────────────────────── */
 .empty-msg {
@@ -735,7 +788,6 @@ body {
 .toast.info { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
 @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -824,7 +876,10 @@ body {
         <label>Label</label>
         <input type="text" id="new-source-label" placeholder="Nvidia">
         <label>Root path</label>
-        <input type="text" id="new-source-path" placeholder="/mnt/recordings/Nvidia">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="new-source-path" placeholder="/mnt/recordings/Nvidia" style="flex:1">
+          <button class="add-btn" onclick="openFolderBrowser('new-source-path')" style="margin-top:0;white-space:nowrap">Browse</button>
+        </div>
         <button class="add-btn" onclick="addSource()">Add Source</button>
         <div class="source-list" id="source-list"></div>
       </div>
@@ -868,7 +923,7 @@ body {
       </div>
       <div class="trim-area">
         <div class="trim-info">
-          <span id="trim-range">Trim Range 0.00s → 0.00s</span>
+          <span id="trim-range">Trim Range 0.00s &rarr; 0.00s</span>
           <span>Timeline <input type="range" id="timeline-zoom" min="100" max="500" value="100"
                 style="width:100px;vertical-align:middle;accent-color:var(--accent)"
                 oninput="updateZoomLabel(this.value)"> <span id="zoom-label">100%</span></span>
@@ -905,14 +960,14 @@ body {
           <label>Start (seconds)</label>
           <div style="display:flex;align-items:center;gap:4px">
             <input type="number" id="clip-start" step="0.01" value="0">
-            <button class="set-btn" onclick="setStartToCurrent()" title="Set to current time" style="background:var(--accent);border:none;border-radius:4px;color:#fff;width:22px;height:22px;cursor:pointer;font-size:11px">&#9660;</button>
+            <button onclick="setStartToCurrent()" title="Set to current time" style="background:var(--accent);border:none;border-radius:4px;color:#fff;width:22px;height:22px;cursor:pointer;font-size:11px">&#9660;</button>
           </div>
         </div>
         <div class="time-group">
           <label>End (seconds)</label>
           <div style="display:flex;align-items:center;gap:4px">
             <input type="number" id="clip-end" step="0.01" value="0">
-            <button class="set-btn" onclick="setEndToCurrent()" title="Set to current time" style="background:var(--accent);border:none;border-radius:4px;color:#fff;width:22px;height:22px;cursor:pointer;font-size:11px">&#9660;</button>
+            <button onclick="setEndToCurrent()" title="Set to current time" style="background:var(--accent);border:none;border-radius:4px;color:#fff;width:22px;height:22px;cursor:pointer;font-size:11px">&#9660;</button>
           </div>
         </div>
       </div>
@@ -938,6 +993,25 @@ body {
   </div>
 </div>
 
+<!-- ── Folder Browser Modal ─────────────────────────────────── -->
+<div class="folder-modal-backdrop" id="folder-modal">
+  <div class="folder-modal">
+    <div class="folder-modal-header">
+      <h3>Browse Folders</h3>
+      <button class="folder-modal-close" onclick="closeFolderBrowser()">&times;</button>
+    </div>
+    <div class="folder-breadcrumb" id="folder-breadcrumb"></div>
+    <div class="folder-list" id="folder-list">
+      <div class="folder-loading">Loading...</div>
+    </div>
+    <div class="folder-modal-footer">
+      <span class="selected-path" id="folder-selected-path">/</span>
+      <button class="folder-cancel-btn" onclick="closeFolderBrowser()">Cancel</button>
+      <button class="folder-select-btn" onclick="selectFolder()">Select This Folder</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container" id="toast-container"></div>
 
 <script>
@@ -952,6 +1026,10 @@ let trimStart = 0;
 let trimEnd = 0;
 let audioTracks = [];
 let refreshTimer = null;
+
+// Folder browser state
+let folderBrowserTarget = null;
+let folderBrowserCurrentPath = '/';
 
 const video = document.getElementById('editor-video');
 
@@ -995,7 +1073,6 @@ function fmtTimeFull(s) {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = Math.floor(s % 60);
-  const ms = Math.floor((s % 1) * 100);
   if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
   return `${m}:${String(sec).padStart(2,'0')}`;
 }
@@ -1012,7 +1089,6 @@ async function loadSources() {
   const data = await res.json();
   sources = data.sources;
 
-  // Update sidebar nav
   const nav = document.getElementById('source-nav');
   nav.innerHTML = '';
   sources.forEach(s => {
@@ -1024,11 +1100,9 @@ async function loadSources() {
     nav.appendChild(el);
   });
 
-  // Update total count
   const total = sources.reduce((a, s) => a + s.count, 0);
   document.getElementById('total-count').textContent = total;
 
-  // Update source filter dropdown
   const select = document.getElementById('source-filter');
   const currentVal = select.value;
   select.innerHTML = '<option value="">All Sources</option>';
@@ -1072,14 +1146,10 @@ function renderRecordings(recs) {
     const thumbUrl = `/api/recordings/thumbnail?path=${encodeURIComponent(r.path)}&time=1`;
     card.innerHTML = `
       <img class="thumb" src="${thumbUrl}" loading="lazy"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-           alt="">
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">
       <div class="thumb-placeholder" style="display:none">&#9654;</div>
       <div class="card-info">
-        <div class="card-name">
-          <span class="src-dot"></span>
-          ${r.name}
-        </div>
+        <div class="card-name"><span class="src-dot"></span>${r.name}</div>
         <div class="card-meta">
           <span>${r.source}</span>
           <span>${fmtSize(r.size)}</span>
@@ -1112,7 +1182,6 @@ async function openEditor(rec) {
     updatePlayerTime();
   };
 
-  // Load audio track info
   const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
   const info = await infoRes.json();
   audioTracks = info.audio_tracks || [];
@@ -1130,40 +1199,25 @@ function closeEditor() {
 function togglePlay() {
   if (video.paused) video.play(); else video.pause();
 }
-
-video.addEventListener('play', () => {
-  document.getElementById('play-btn').innerHTML = '&#9646;&#9646;';
-});
-video.addEventListener('pause', () => {
-  document.getElementById('play-btn').innerHTML = '&#9654;';
-});
+video.addEventListener('play', () => { document.getElementById('play-btn').innerHTML = '&#9646;&#9646;'; });
+video.addEventListener('pause', () => { document.getElementById('play-btn').innerHTML = '&#9654;'; });
 video.addEventListener('timeupdate', () => {
   updatePlayerTime();
   updateTrimPlayhead();
-  // Update scrubber
   if (editorDuration > 0) {
     document.getElementById('scrubber').value = (video.currentTime / editorDuration) * 1000;
   }
 });
 
-function onScrub(val) {
-  video.currentTime = (val / 1000) * editorDuration;
-}
+function onScrub(val) { video.currentTime = (val / 1000) * editorDuration; }
 
 function updatePlayerTime() {
-  document.getElementById('player-time').textContent =
-    `${fmtTimeFull(video.currentTime)} / ${fmtTimeFull(editorDuration)}`;
-  document.getElementById('playback-time').textContent =
-    `${fmtTimeFull(video.currentTime)} / ${fmtTimeFull(editorDuration)}`;
+  document.getElementById('player-time').textContent = `${fmtTimeFull(video.currentTime)} / ${fmtTimeFull(editorDuration)}`;
+  document.getElementById('playback-time').textContent = `${fmtTimeFull(video.currentTime)} / ${fmtTimeFull(editorDuration)}`;
 }
 
-function seekRelative(dt) {
-  video.currentTime = Math.max(0, Math.min(editorDuration, video.currentTime + dt));
-}
-
-function toggleMute() {
-  video.muted = !video.muted;
-}
+function seekRelative(dt) { video.currentTime = Math.max(0, Math.min(editorDuration, video.currentTime + dt)); }
+function toggleMute() { video.muted = !video.muted; }
 
 function toggleFullscreen() {
   const container = document.querySelector('.editor-video-container');
@@ -1174,7 +1228,6 @@ function toggleFullscreen() {
 // ── Trim ────────────────────────────────────────────────────
 function updateTrimUI() {
   if (!editorDuration) return;
-  const track = document.getElementById('trim-track');
   const selected = document.getElementById('trim-selected');
   const handleL = document.getElementById('trim-handle-left');
   const handleR = document.getElementById('trim-handle-right');
@@ -1187,23 +1240,18 @@ function updateTrimUI() {
   handleL.style.left = startPct + '%';
   handleR.style.left = endPct + '%';
 
-  document.getElementById('trim-range').textContent =
-    `Trim Range ${trimStart.toFixed(2)}s \u2192 ${trimEnd.toFixed(2)}s`;
+  document.getElementById('trim-range').textContent = `Trim Range ${trimStart.toFixed(2)}s \u2192 ${trimEnd.toFixed(2)}s`;
   document.getElementById('clip-start').value = trimStart.toFixed(2);
   document.getElementById('clip-end').value = trimEnd.toFixed(2);
 }
 
 function updateTrimPlayhead() {
   if (!editorDuration) return;
-  const ph = document.getElementById('trim-playhead');
-  ph.style.left = (video.currentTime / editorDuration) * 100 + '%';
+  document.getElementById('trim-playhead').style.left = (video.currentTime / editorDuration) * 100 + '%';
 }
 
-function updateZoomLabel(val) {
-  document.getElementById('zoom-label').textContent = val + '%';
-}
+function updateZoomLabel(val) { document.getElementById('zoom-label').textContent = val + '%'; }
 
-// Trim handle dragging
 let dragHandle = null;
 document.getElementById('trim-handle-left').addEventListener('mousedown', (e) => { e.preventDefault(); dragHandle = 'left'; });
 document.getElementById('trim-handle-right').addEventListener('mousedown', (e) => { e.preventDefault(); dragHandle = 'right'; });
@@ -1214,22 +1262,16 @@ document.addEventListener('mousemove', (e) => {
   const rect = track.getBoundingClientRect();
   const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   const t = pct * editorDuration;
-  if (dragHandle === 'left') {
-    trimStart = Math.max(0, Math.min(t, trimEnd - 0.01));
-  } else {
-    trimEnd = Math.min(editorDuration, Math.max(t, trimStart + 0.01));
-  }
+  if (dragHandle === 'left') trimStart = Math.max(0, Math.min(t, trimEnd - 0.01));
+  else trimEnd = Math.min(editorDuration, Math.max(t, trimStart + 0.01));
   updateTrimUI();
 });
-
 document.addEventListener('mouseup', () => { dragHandle = null; });
 
-// Click on trim track to seek
 document.getElementById('trim-track').addEventListener('click', (e) => {
   if (e.target.id.includes('handle')) return;
   const rect = e.currentTarget.getBoundingClientRect();
-  const pct = (e.clientX - rect.left) / rect.width;
-  video.currentTime = pct * editorDuration;
+  video.currentTime = ((e.clientX - rect.left) / rect.width) * editorDuration;
 });
 
 function setStartToCurrent() {
@@ -1237,7 +1279,6 @@ function setStartToCurrent() {
   if (trimStart >= trimEnd) trimEnd = Math.min(editorDuration, trimStart + 0.1);
   updateTrimUI();
 }
-
 function setEndToCurrent() {
   trimEnd = video.currentTime;
   if (trimEnd <= trimStart) trimStart = Math.max(0, trimEnd - 0.1);
@@ -1248,10 +1289,7 @@ function playSelection() {
   video.currentTime = trimStart;
   video.play();
   const handler = () => {
-    if (video.currentTime >= trimEnd) {
-      video.pause();
-      video.removeEventListener('timeupdate', handler);
-    }
+    if (video.currentTime >= trimEnd) { video.pause(); video.removeEventListener('timeupdate', handler); }
   };
   video.addEventListener('timeupdate', handler);
 }
@@ -1267,10 +1305,7 @@ function addTrimSegment() {
 function renderAudioTracks() {
   const section = document.getElementById('audio-tracks-section');
   const list = document.getElementById('audio-tracks-list');
-  if (!audioTracks.length) {
-    section.style.display = 'none';
-    return;
-  }
+  if (!audioTracks.length) { section.style.display = 'none'; return; }
   section.style.display = '';
   list.innerHTML = '';
   audioTracks.forEach((t, i) => {
@@ -1293,24 +1328,18 @@ function renderAudioTracks() {
 // ── Create Clip ─────────────────────────────────────────────
 async function createClip() {
   if (!editorFile) return;
-
   const title = document.getElementById('clip-title').value || editorFile.name;
   const game = document.getElementById('clip-game').value || 'Unknown';
   const start = parseFloat(document.getElementById('clip-start').value) || 0;
   const end = parseFloat(document.getElementById('clip-end').value) || editorDuration;
   const lossless = document.getElementById('lossless-check').checked;
 
-  // Collect audio track settings
   let audioTrackSettings = null;
   if (!lossless && audioTracks.length > 0) {
     audioTrackSettings = [];
     document.querySelectorAll('.track-check').forEach((cb, i) => {
       const vol = parseInt(document.querySelectorAll('.track-vol')[i].value);
-      audioTrackSettings.push({
-        index: i,
-        enabled: cb.checked,
-        volume: vol,
-      });
+      audioTrackSettings.push({ index: i, enabled: cb.checked, volume: vol });
     });
   }
 
@@ -1322,26 +1351,12 @@ async function createClip() {
     const res = await fetch('/api/clip', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filepath: editorFile.path,
-        source_label: editorFile.source,
-        start,
-        end,
-        title,
-        game,
-        lossless,
-        audio_tracks: audioTrackSettings,
-      }),
+      body: JSON.stringify({ filepath: editorFile.path, source_label: editorFile.source, start, end, title, game, lossless, audio_tracks: audioTrackSettings }),
     });
     const data = await res.json();
-    if (res.ok) {
-      toast(`Clip created: ${data.name} (${fmtSize(data.size)})`, 'success');
-    } else {
-      toast(`Error: ${data.detail}`, 'error');
-    }
-  } catch (e) {
-    toast(`Error: ${e.message}`, 'error');
-  }
+    if (res.ok) toast(`Clip created: ${data.name} (${fmtSize(data.size)})`, 'success');
+    else toast(`Error: ${data.detail}`, 'error');
+  } catch (e) { toast(`Error: ${e.message}`, 'error'); }
 
   btn.disabled = false;
   btn.textContent = 'Create Clip';
@@ -1446,9 +1461,7 @@ async function addSource() {
       const data = await res.json();
       toast(data.detail, 'error');
     }
-  } catch (e) {
-    toast(e.message, 'error');
-  }
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 async function removeSource(label) {
@@ -1471,6 +1484,100 @@ async function saveSettings() {
   setupAutoRefresh();
 }
 
+// ── Folder Browser ──────────────────────────────────────────
+function openFolderBrowser(targetInputId) {
+  folderBrowserTarget = targetInputId;
+  const currentPath = document.getElementById(targetInputId).value || '/';
+  document.getElementById('folder-modal').classList.add('visible');
+  browseTo(currentPath.startsWith('/') ? currentPath : '/');
+}
+
+function closeFolderBrowser() {
+  document.getElementById('folder-modal').classList.remove('visible');
+  folderBrowserTarget = null;
+}
+
+async function browseTo(path) {
+  folderBrowserCurrentPath = path;
+  document.getElementById('folder-selected-path').textContent = path;
+
+  // Update breadcrumb
+  const breadcrumb = document.getElementById('folder-breadcrumb');
+  breadcrumb.innerHTML = '';
+  const parts = path.split('/').filter(Boolean);
+
+  const rootCrumb = document.createElement('span');
+  rootCrumb.className = 'crumb' + (parts.length === 0 ? ' current' : '');
+  rootCrumb.textContent = '/';
+  rootCrumb.onclick = () => browseTo('/');
+  breadcrumb.appendChild(rootCrumb);
+
+  let builtPath = '';
+  parts.forEach((part, i) => {
+    builtPath += '/' + part;
+    const sep = document.createElement('span');
+    sep.className = 'sep';
+    sep.textContent = '/';
+    breadcrumb.appendChild(sep);
+
+    const crumb = document.createElement('span');
+    const crumbPath = builtPath;
+    crumb.className = 'crumb' + (i === parts.length - 1 ? ' current' : '');
+    crumb.textContent = part;
+    crumb.onclick = () => browseTo(crumbPath);
+    breadcrumb.appendChild(crumb);
+  });
+
+  // Load directories
+  const list = document.getElementById('folder-list');
+  list.innerHTML = '<div class="folder-loading">Loading...</div>';
+
+  try {
+    const res = await fetch(`/api/browse?path=${encodeURIComponent(path)}`);
+    if (!res.ok) {
+      const err = await res.json();
+      list.innerHTML = `<div class="folder-empty">${err.detail || 'Cannot access this folder'}</div>`;
+      return;
+    }
+    const data = await res.json();
+
+    list.innerHTML = '';
+
+    // Parent directory link
+    if (path !== '/' && data.parent) {
+      const parentItem = document.createElement('div');
+      parentItem.className = 'folder-item';
+      parentItem.innerHTML = '<span class="folder-icon">&#128281;</span><span class="folder-name">..</span>';
+      parentItem.onclick = () => browseTo(data.parent);
+      list.appendChild(parentItem);
+    }
+
+    if (!data.directories.length && path === '/') {
+      list.innerHTML = '<div class="folder-empty">No folders found</div>';
+      return;
+    }
+
+    data.directories.forEach(dir => {
+      const item = document.createElement('div');
+      item.className = 'folder-item';
+      item.innerHTML = `<span class="folder-icon">&#128193;</span><span class="folder-name">${dir.name}</span>`;
+      item.onclick = () => browseTo(dir.path);
+      list.appendChild(item);
+    });
+
+  } catch (e) {
+    list.innerHTML = `<div class="folder-empty">Error: ${e.message}</div>`;
+  }
+}
+
+function selectFolder() {
+  if (folderBrowserTarget) {
+    document.getElementById(folderBrowserTarget).value = folderBrowserCurrentPath;
+  }
+  closeFolderBrowser();
+  toast(`Selected: ${folderBrowserCurrentPath}`, 'success');
+}
+
 // ── Auto Refresh ────────────────────────────────────────────
 async function setupAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
@@ -1478,9 +1585,7 @@ async function setupAutoRefresh() {
   const config = await res.json();
   if (config.auto_refresh) {
     refreshTimer = setInterval(() => {
-      if (currentPage === 'recordings' && !editorFile) {
-        loadRecordings();
-      }
+      if (currentPage === 'recordings' && !editorFile) loadRecordings();
     }, (config.refresh_interval || 20) * 1000);
   }
 }
@@ -1488,6 +1593,13 @@ async function setupAutoRefresh() {
 // ── Keyboard Shortcuts ──────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  // Close folder browser on Escape
+  if (e.key === 'Escape' && document.getElementById('folder-modal').classList.contains('visible')) {
+    closeFolderBrowser();
+    return;
+  }
+
   if (!editorFile) return;
   switch (e.key) {
     case ' ': e.preventDefault(); togglePlay(); break;
