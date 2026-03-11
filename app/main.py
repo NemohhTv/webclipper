@@ -2,9 +2,12 @@ import hashlib
 import json
 import mimetypes
 import os
+import shutil
 import subprocess
 import tempfile
+import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import quote
@@ -23,7 +26,7 @@ DEFAULT_CLIPS_DIR = os.path.join(DATA_DIR, "clips")
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".mov", ".avi", ".m4v", ".webm", ".ts"}
 DIRECT_PLAY_EXTENSIONS = {".mp4", ".webm", ".m4v", ".mov"}
-BROWSER_FRIENDLY_VIDEO = {"h264"}
+BROWSER_FRIENDLY_VIDEO = {"h264", "vp8", "vp9", "av1"}
 BROWSER_FRIENDLY_AUDIO = {"aac", "mp3", "opus", "vorbis"}
 
 DEFAULT_CONFIG = {
@@ -32,6 +35,9 @@ DEFAULT_CONFIG = {
     "refresh_interval": 20,
     "clips_path": DEFAULT_CLIPS_DIR,
 }
+
+JOBS: Dict[str, dict] = {}
+JOBS_LOCK = threading.Lock()
 
 
 class SourceModel(BaseModel):
@@ -46,6 +52,10 @@ class SettingsModel(BaseModel):
 
 
 class DeletePathsRequest(BaseModel):
+    paths: List[str] = Field(default_factory=list)
+
+
+class RemuxRequest(BaseModel):
     paths: List[str] = Field(default_factory=list)
 
 
@@ -148,7 +158,7 @@ def ffprobe_json(path: str) -> dict:
         ],
         capture_output=True,
         text=True,
-        timeout=20,
+        timeout=30,
     )
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail="ffprobe failed")
@@ -170,10 +180,21 @@ def probe_media(path: str) -> dict:
         duration = 0.0
 
     audio_tracks = []
+    video_codec = ""
+    audio_codec = ""
+    has_video = False
+
+    for stream in streams:
+        codec_type = stream.get("codec_type")
+        if codec_type == "video" and not video_codec:
+            video_codec = (stream.get("codec_name") or "").lower()
+            has_video = True
+        if codec_type == "audio" and not audio_codec:
+            audio_codec = (stream.get("codec_name") or "").lower()
+
     for stream in streams:
         if stream.get("codec_type") != "audio":
             continue
-
         tags = stream.get("tags", {}) or {}
         track_number = len(audio_tracks) + 1
         audio_tracks.append(
@@ -187,17 +208,6 @@ def probe_media(path: str) -> dict:
                 "sample_rate": stream.get("sample_rate", ""),
             }
         )
-
-    video_codec = ""
-    audio_codec = ""
-    has_video = False
-
-    for stream in streams:
-        if stream.get("codec_type") == "video" and not video_codec:
-            video_codec = (stream.get("codec_name") or "").lower()
-            has_video = True
-        if stream.get("codec_type") == "audio" and not audio_codec:
-            audio_codec = (stream.get("codec_name") or "").lower()
 
     return {
         "duration": duration,
@@ -229,13 +239,9 @@ def choose_preview_strategy(path: str, probe: dict) -> str:
 
 def build_preview_asset(path: str, probe: dict) -> dict:
     strategy = choose_preview_strategy(path, probe)
-
     if strategy == "direct":
         encoded = quote(path, safe="")
-        return {
-            "strategy": strategy,
-            "url": f"/stream/direct?path={encoded}",
-        }
+        return {"strategy": strategy, "url": f"/stream/direct?path={encoded}"}
 
     real_path = os.path.realpath(path)
     mtime = str(os.path.getmtime(real_path))
@@ -244,91 +250,35 @@ def build_preview_asset(path: str, probe: dict) -> dict:
     out_path = os.path.join(PREVIEW_DIR, out_name)
 
     if os.path.exists(out_path):
-        return {
-            "strategy": strategy,
-            "url": f"/preview-cache/{out_name}",
-        }
+        return {"strategy": strategy, "url": f"/preview-cache/{out_name}"}
 
     if strategy == "remux":
         cmd = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            real_path,
-            "-map",
-            "0:v:0?",
-            "-map",
-            "0:a:0?",
-            "-dn",
-            "-sn",
-            "-c",
-            "copy",
-            "-movflags",
-            "+faststart",
-            out_path,
+            "ffmpeg", "-y", "-i", real_path,
+            "-map", "0:v:0?", "-map", "0:a:0?",
+            "-dn", "-sn", "-c", "copy", "-movflags", "+faststart", out_path,
         ]
     elif strategy == "audio_transcode":
         cmd = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            real_path,
-            "-map",
-            "0:v:0?",
-            "-map",
-            "0:a:0?",
-            "-dn",
-            "-sn",
-            "-c:v",
-            "copy",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "160k",
-            "-movflags",
-            "+faststart",
-            out_path,
+            "ffmpeg", "-y", "-i", real_path,
+            "-map", "0:v:0?", "-map", "0:a:0?",
+            "-dn", "-sn", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
+            "-movflags", "+faststart", out_path,
         ]
     else:
         cmd = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            real_path,
-            "-map",
-            "0:v:0?",
-            "-map",
-            "0:a:0?",
-            "-dn",
-            "-sn",
-            "-vf",
-            "scale='min(1920,iw)':-2",
-            "-c:v",
-            "libx264",
-            "-preset",
-            "ultrafast",
-            "-crf",
-            "28",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "160k",
-            "-movflags",
-            "+faststart",
-            out_path,
+            "ffmpeg", "-y", "-i", real_path,
+            "-map", "0:v:0?", "-map", "0:a:0?",
+            "-dn", "-sn", "-vf", "scale='min(1920,iw)':-2",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
+            "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", out_path,
         ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
     if result.returncode != 0 or not os.path.exists(out_path):
-        raise HTTPException(
-            status_code=500,
-            detail=f"Preview build failed: {(result.stderr or '').strip()[:700]}",
-        )
+        raise HTTPException(status_code=500, detail=f"Preview build failed: {(result.stderr or '').strip()[:700]}")
 
-    return {
-        "strategy": strategy,
-        "url": f"/preview-cache/{out_name}",
-    }
+    return {"strategy": strategy, "url": f"/preview-cache/{out_name}"}
 
 
 def scan_recordings(sources: List[dict]) -> List[dict]:
@@ -337,17 +287,12 @@ def scan_recordings(sources: List[dict]) -> List[dict]:
     for source in sources:
         label = source.get("label", "").strip()
         root = source.get("path", "").strip()
-
         if not label or not root or not os.path.isdir(root):
             continue
-
         try:
             for entry in os.scandir(root):
-                if not entry.is_file():
+                if not entry.is_file() or not is_video_file(entry.path):
                     continue
-                if not is_video_file(entry.path):
-                    continue
-
                 stat = entry.stat()
                 recordings.append(
                     {
@@ -356,6 +301,7 @@ def scan_recordings(sources: List[dict]) -> List[dict]:
                         "source": label,
                         "size": stat.st_size,
                         "modified": stat.st_mtime,
+                        "ext": Path(entry.path).suffix.lower(),
                     }
                 )
         except PermissionError:
@@ -375,30 +321,191 @@ def build_thumbnail(path: str, second: float = 1.0) -> str:
         return out_path
 
     cmd = [
-        "ffmpeg",
-        "-y",
-        "-ss",
-        str(second),
-        "-i",
-        real_path,
-        "-frames:v",
-        "1",
-        "-q:v",
-        "5",
-        "-vf",
-        "scale=480:-2",
-        out_path,
+        "ffmpeg", "-y", "-ss", str(second), "-i", real_path,
+        "-frames:v", "1", "-q:v", "5", "-vf", "scale=480:-2", out_path,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
     if result.returncode != 0 or not os.path.exists(out_path):
         raise HTTPException(status_code=500, detail="Thumbnail generation failed")
-
     return out_path
 
 
 def safe_title(value: str) -> str:
     cleaned = "".join(c for c in (value or "clip") if c.isalnum() or c in " -_").strip()
     return cleaned or "clip"
+
+
+def set_job(job_id: str, patch: dict) -> None:
+    with JOBS_LOCK:
+        if job_id in JOBS:
+            JOBS[job_id].update(patch)
+
+
+def get_job(job_id: str) -> dict:
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        return json.loads(json.dumps(job))
+
+
+def start_remux_job(paths: List[str], roots: List[str]) -> str:
+    job_id = uuid.uuid4().hex
+    items = []
+    for path in paths:
+        items.append({
+            "source_path": path,
+            "output_path": "",
+            "status": "queued",
+            "progress": 0.0,
+            "error": "",
+        })
+
+    with JOBS_LOCK:
+        JOBS[job_id] = {
+            "job_id": job_id,
+            "type": "remux",
+            "status": "queued",
+            "progress": 0.0,
+            "created": int(time.time()),
+            "items": items,
+            "message": "Queued",
+        }
+
+    thread = threading.Thread(target=run_remux_job, args=(job_id, paths, roots), daemon=True)
+    thread.start()
+    return job_id
+
+
+def parse_progress_line(line: str) -> tuple[str, str]:
+    if "=" not in line:
+        return "", ""
+    key, value = line.strip().split("=", 1)
+    return key.strip(), value.strip()
+
+
+def remux_one_file(job_id: str, idx: int, source_path: str, total_count: int) -> None:
+    item_prefix = idx / max(total_count, 1)
+    item_share = 1 / max(total_count, 1)
+
+    real_source = os.path.realpath(source_path)
+    ext = Path(real_source).suffix.lower()
+
+    if not os.path.isfile(real_source):
+        set_job(job_id, {"message": f"Missing file: {source_path}"})
+        with JOBS_LOCK:
+            JOBS[job_id]["items"][idx]["status"] = "failed"
+            JOBS[job_id]["items"][idx]["error"] = "File not found"
+        return
+
+    if ext != ".mkv":
+        with JOBS_LOCK:
+            JOBS[job_id]["items"][idx]["status"] = "skipped"
+            JOBS[job_id]["items"][idx]["progress"] = 100.0
+        set_job(job_id, {"progress": round((item_prefix + item_share) * 100, 1)})
+        return
+
+    probe = probe_media(real_source)
+    duration = max(float(probe.get("duration") or 0), 0.01)
+    output_path = os.path.splitext(real_source)[0] + ".mp4"
+    temp_output = output_path + f".__remux_{uuid.uuid4().hex}.tmp"
+
+    with JOBS_LOCK:
+        JOBS[job_id]["items"][idx]["status"] = "running"
+        JOBS[job_id]["items"][idx]["output_path"] = output_path
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i", real_source,
+        "-map", "0",
+        "-dn", "-sn",
+        "-c", "copy",
+        "-movflags", "+faststart",
+        "-progress", "pipe:1",
+        "-nostats",
+        temp_output,
+    ]
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+
+    last_progress = 0.0
+    try:
+        assert proc.stdout is not None
+        for raw_line in proc.stdout:
+            key, value = parse_progress_line(raw_line)
+            if key == "out_time_ms":
+                try:
+                    out_time = float(value) / 1_000_000.0
+                    current = max(0.0, min(out_time / duration, 1.0))
+                    last_progress = current
+                    overall = (item_prefix + (current * item_share)) * 100
+                    with JOBS_LOCK:
+                        JOBS[job_id]["items"][idx]["progress"] = round(current * 100, 1)
+                        JOBS[job_id]["progress"] = round(overall, 1)
+                        JOBS[job_id]["message"] = f"Remuxing {os.path.basename(real_source)}"
+                except Exception:
+                    pass
+            elif key == "progress" and value == "end":
+                last_progress = 1.0
+    finally:
+        proc.wait()
+
+    if proc.returncode != 0 or not os.path.exists(temp_output):
+        if os.path.exists(temp_output):
+            try:
+                os.remove(temp_output)
+            except OSError:
+                pass
+        with JOBS_LOCK:
+            JOBS[job_id]["items"][idx]["status"] = "failed"
+            JOBS[job_id]["items"][idx]["error"] = "ffmpeg remux failed"
+            JOBS[job_id]["items"][idx]["progress"] = round(last_progress * 100, 1)
+        return
+
+    try:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        os.replace(temp_output, output_path)
+        os.remove(real_source)
+    except Exception as exc:
+        with JOBS_LOCK:
+            JOBS[job_id]["items"][idx]["status"] = "failed"
+            JOBS[job_id]["items"][idx]["error"] = str(exc)
+        return
+
+    with JOBS_LOCK:
+        JOBS[job_id]["items"][idx]["status"] = "done"
+        JOBS[job_id]["items"][idx]["progress"] = 100.0
+        JOBS[job_id]["progress"] = round((item_prefix + item_share) * 100, 1)
+
+
+def run_remux_job(job_id: str, paths: List[str], roots: List[str]) -> None:
+    set_job(job_id, {"status": "running", "message": "Starting remux...", "progress": 0.0})
+
+    filtered = []
+    for path in paths:
+        real = os.path.realpath(path)
+        if os.path.isfile(real) and is_within_root(real, roots):
+            filtered.append(real)
+
+    total = len(filtered)
+    if total == 0:
+        set_job(job_id, {"status": "failed", "message": "No valid files to remux", "progress": 0.0})
+        return
+
+    for idx, path in enumerate(filtered):
+        remux_one_file(job_id, idx, path, total)
+
+    with JOBS_LOCK:
+        items = JOBS[job_id]["items"]
+        if any(item["status"] == "failed" for item in items):
+            JOBS[job_id]["status"] = "partial"
+            JOBS[job_id]["message"] = "Remux finished with some failures"
+        else:
+            JOBS[job_id]["status"] = "done"
+            JOBS[job_id]["message"] = "Remux finished"
+        JOBS[job_id]["progress"] = 100.0
 
 
 @app.exception_handler(HTTPException)
@@ -428,13 +535,11 @@ async def get_sources():
 
     sources = []
     for source in config.get("sources", []):
-        sources.append(
-            {
-                "label": source["label"],
-                "path": source["path"],
-                "count": counts.get(source["label"], 0),
-            }
-        )
+        sources.append({
+            "label": source["label"],
+            "path": source["path"],
+            "count": counts.get(source["label"], 0),
+        })
 
     return {"status": "ok", "sources": sources}
 
@@ -482,7 +587,6 @@ async def get_settings():
 async def update_settings(settings: SettingsModel):
     config = load_config()
     clips_path = os.path.abspath((settings.clips_path or "").strip() or DEFAULT_CLIPS_DIR)
-
     try:
         os.makedirs(clips_path, exist_ok=True)
     except OSError:
@@ -510,12 +614,8 @@ async def browse_directory(path: str = "/"):
     except PermissionError:
         raise HTTPException(status_code=403, detail="Permission denied")
 
-    return {
-        "status": "ok",
-        "path": target,
-        "parent": os.path.dirname(target) if target != "/" else "/",
-        "directories": directories,
-    }
+    parent = target if target == "/" else os.path.dirname(target) or "/"
+    return {"status": "ok", "path": target, "parent": parent, "directories": directories}
 
 
 @app.get("/api/recordings")
@@ -539,15 +639,12 @@ async def delete_recordings(req: DeletePathsRequest):
 
     for path in req.paths:
         real = os.path.realpath(path)
-
         if not os.path.isfile(real):
             failed.append({"path": path, "error": "File not found"})
             continue
-
         if not is_within_root(real, roots):
             failed.append({"path": path, "error": "Outside configured sources"})
             continue
-
         try:
             os.remove(real)
             deleted += 1
@@ -555,6 +652,29 @@ async def delete_recordings(req: DeletePathsRequest):
             failed.append({"path": path, "error": str(exc)})
 
     return {"status": "ok", "deleted": deleted, "failed": failed}
+
+
+@app.post("/api/recordings/remux")
+async def remux_recordings(req: RemuxRequest):
+    if not req.paths:
+        raise HTTPException(status_code=400, detail="No files selected")
+
+    config = load_config()
+    roots = [s["path"] for s in config.get("sources", [])]
+    job_id = start_remux_job(req.paths, roots)
+    return {"status": "ok", "job_id": job_id}
+
+
+@app.get("/api/jobs/{job_id}")
+async def get_job_status(job_id: str):
+    return {"status": "ok", "job": get_job(job_id)}
+
+
+@app.get("/api/jobs")
+async def list_jobs():
+    with JOBS_LOCK:
+        jobs = list(JOBS.values())[-10:]
+    return {"status": "ok", "jobs": jobs}
 
 
 @app.get("/api/recordings/info")
@@ -632,8 +752,8 @@ async def create_clip(req: ClipRequest):
     if duration > 0 and end > duration:
         end = duration
 
-    selected = req.selected_audio_tracks or [t["stream_index"] for t in probe["audio_tracks"]]
     valid_streams = [t["stream_index"] for t in probe["audio_tracks"]]
+    selected = req.selected_audio_tracks or valid_streams
     selected = [int(x) for x in selected if int(x) in valid_streams]
 
     container = (req.container or "mp4").lower().lstrip(".")
@@ -660,28 +780,20 @@ async def create_clip(req: ClipRequest):
 
     if mode == "copy":
         cmd += ["-map", "0:v:0?"]
-
         if selected:
             for stream_idx in selected:
                 cmd += ["-map", f"0:{stream_idx}"]
         else:
             cmd += ["-an"]
-
         cmd += ["-c", "copy", "-avoid_negative_ts", "make_zero"]
-
         if container == "mp4":
             cmd += ["-movflags", "+faststart"]
-
     else:
         filter_parts = []
         audio_map_targets = []
-
-        cmd += ["-map", "0:v:0?"]
-        cmd += ["-c:v", "libx264", "-preset", "fast", "-crf", "18"]
-
+        cmd += ["-map", "0:v:0?", "-c:v", "libx264", "-preset", "fast", "-crf", "18"]
         if container == "mp4":
             cmd += ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
-
         if not selected:
             cmd += ["-an"]
         else:
@@ -705,24 +817,17 @@ async def create_clip(req: ClipRequest):
                         mapped_filtered.append(label)
                     else:
                         mapped_direct.append(f"0:{stream_idx}")
-
                 audio_map_targets = mapped_filtered + mapped_direct
                 cmd += ["-c:a", "aac", "-b:a", "256k"]
-
             if filter_parts:
                 cmd += ["-filter_complex", ";".join(filter_parts)]
-
             for target in audio_map_targets:
                 cmd += ["-map", target]
 
     cmd.append(output_path)
-
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
     if result.returncode != 0 or not os.path.exists(output_path):
-        raise HTTPException(
-            status_code=500,
-            detail=f"FFmpeg failed: {(result.stderr or '').strip()[:800]}",
-        )
+        raise HTTPException(status_code=500, detail=f"FFmpeg failed: {(result.stderr or '').strip()[:800]}")
 
     metadata = {
         "title": req.title,
@@ -761,7 +866,6 @@ async def get_clips():
         path = os.path.join(clips_dir, name)
         if not os.path.isfile(path) or not is_video_file(path):
             continue
-
         stat = os.stat(path)
         meta = None
         meta_path = path + ".json"
@@ -771,16 +875,13 @@ async def get_clips():
                     meta = json.load(f)
             except Exception:
                 meta = None
-
-        clips.append(
-            {
-                "name": name,
-                "path": path,
-                "size": stat.st_size,
-                "modified": stat.st_mtime,
-                "meta": meta,
-            }
-        )
+        clips.append({
+            "name": name,
+            "path": path,
+            "size": stat.st_size,
+            "modified": stat.st_mtime,
+            "meta": meta,
+        })
 
     clips.sort(key=lambda item: item["modified"], reverse=True)
     return {"status": "ok", "clips": clips}
@@ -797,15 +898,12 @@ async def delete_clips(req: DeletePathsRequest):
 
     for path in req.paths:
         real = os.path.realpath(path)
-
         if not os.path.isfile(real):
             failed.append({"path": path, "error": "Clip not found"})
             continue
-
         if not (real == clips_dir or real.startswith(clips_dir + os.sep)):
             failed.append({"path": path, "error": "Outside clips folder"})
             continue
-
         try:
             os.remove(real)
             meta_path = real + ".json"
