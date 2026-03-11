@@ -1,17 +1,22 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV WEBCLIPPER_DATA_DIR=/data
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . .
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-RUN mkdir -p /data/clips /data/thumbnails
+COPY app /app/app
+COPY templates /app/templates
+
+RUN mkdir -p /data /data/clips /data/thumbnails /data/preview
 
 EXPOSE 9069
 
