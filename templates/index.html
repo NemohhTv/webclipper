@@ -9,198 +9,88 @@
       --bg: #07101f;
       --panel: #0f1b2f;
       --panel-2: #14233c;
+      --panel-3: #0b1830;
       --border: #223657;
       --text: #eef4ff;
       --muted: #9eb2d4;
       --accent: #5aa8ff;
       --accent-2: #39c46a;
       --danger: #ff7b8f;
+      --warning: #ffbf5f;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --radius: 20px;
+      --radius: 18px;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: Inter, system-ui, Arial, sans-serif;
       background: linear-gradient(180deg, #04101f 0%, #07101f 100%);
       color: var(--text);
     }
-
     .layout {
       display: grid;
       grid-template-columns: 340px 1fr;
       min-height: 100vh;
     }
-
     .sidebar {
       border-right: 1px solid var(--border);
       padding: 22px;
       background: rgba(4, 12, 25, 0.92);
       overflow-y: auto;
     }
-
     .main {
       padding: 22px;
       overflow-y: auto;
     }
-
     .brand {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 800;
       margin-bottom: 20px;
     }
-
     .panel {
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
       box-shadow: var(--shadow);
     }
-
-    h2, h3 {
-      margin: 0 0 16px;
-      font-weight: 800;
-    }
-
-    .field {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    .label {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
+    h2, h3 { margin: 0 0 14px; font-weight: 800; }
+    .field { display: grid; gap: 8px; margin-bottom: 12px; }
+    .label { font-size: 13px; color: var(--muted); }
     input, select, button {
       width: 100%;
       border: 1px solid var(--border);
       background: var(--panel-2);
       color: var(--text);
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 11px 13px;
       font-size: 14px;
     }
-
-    input[type="checkbox"] {
-      width: auto;
-      accent-color: var(--accent);
-    }
-
-    input[type="range"] {
-      width: 100%;
-      padding: 0;
-      accent-color: var(--accent);
-      background: transparent;
-      border: none;
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: 700;
-      transition: 0.15s ease;
-    }
-
-    button:hover {
-      filter: brightness(1.08);
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #061220;
-      border-color: transparent;
-    }
-
-    .btn-success {
-      background: var(--accent-2);
-      color: #061220;
-      border-color: transparent;
-    }
-
-    .btn-danger {
-      background: rgba(255, 123, 143, 0.08);
-      color: #ffc2cb;
-      border-color: rgba(255,123,143,.35);
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn-row > * {
-      flex: 1;
-    }
-
-    .muted {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .tab {
-      width: auto;
-      padding: 12px 18px;
-    }
-
-    .tab.active {
-      background: var(--accent);
-      color: #061220;
-      border-color: transparent;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .toolbar select {
-      max-width: 280px;
-    }
-
+    input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+    input[type="range"] { width: 100%; padding: 0; border: none; background: transparent; accent-color: var(--accent); }
+    button { cursor: pointer; font-weight: 700; }
+    button:hover { filter: brightness(1.08); }
+    .btn-primary { background: var(--accent); color: #061220; border-color: transparent; }
+    .btn-success { background: var(--accent-2); color: #061220; border-color: transparent; }
+    .btn-danger { background: rgba(255, 123, 143, 0.08); color: #ffc2cb; border-color: rgba(255,123,143,.35); }
+    .btn-warning { background: rgba(255, 191, 95, 0.08); color: #ffd99a; border-color: rgba(255,191,95,.35); }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row > * { flex: 1; }
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+    .tab { width: auto; padding: 12px 16px; }
+    .tab.active { background: var(--accent); color: #061220; border-color: transparent; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .toolbar select { max-width: 260px; }
     .status {
-      display: none;
-      margin-bottom: 16px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: var(--panel);
+      display: none; margin-bottom: 16px; padding: 14px 16px; border-radius: 16px;
+      border: 1px solid var(--border); background: var(--panel);
     }
-
-    .status.show {
-      display: block;
-    }
-
-    .status.error {
-      color: #ffd1d8;
-      background: rgba(255,123,143,.08);
-      border-color: rgba(255,123,143,.35);
-    }
-
-    .status.success {
-      color: #dcecff;
-      background: rgba(90,168,255,.08);
-      border-color: rgba(90,168,255,.35);
-    }
-
-    .grid {
-      display: grid;
-      gap: 12px;
-    }
-
+    .status.show { display: block; }
+    .status.error { color: #ffd1d8; background: rgba(255,123,143,.08); border-color: rgba(255,123,143,.35); }
+    .status.success { color: #dcecff; background: rgba(90,168,255,.08); border-color: rgba(90,168,255,.35); }
+    .grid { display: grid; gap: 12px; }
     .recording-card {
       display: grid;
       grid-template-columns: 28px 180px 1fr auto;
@@ -211,318 +101,104 @@
       border-radius: 18px;
       padding: 12px;
     }
-
     .clip-card {
-      display: grid;
-      grid-template-columns: 28px 1fr auto;
-      gap: 12px;
-      align-items: center;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 12px;
+      display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 12px;
     }
-
     .thumb {
-      width: 180px;
-      height: 102px;
-      object-fit: cover;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #000;
+      width: 180px; height: 102px; object-fit: cover; border-radius: 12px;
+      border: 1px solid var(--border); background: #000;
     }
-
-    .title {
-      font-weight: 800;
-      margin-bottom: 6px;
+    .title { font-weight: 800; margin-bottom: 6px; }
+    .meta { color: var(--muted); font-size: 12px; line-height: 1.5; word-break: break-all; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .hidden { display: none !important; }
+    .sources-list, .jobs-list { display: grid; gap: 10px; }
+    .source-item, .job-item {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 16px; padding: 12px;
     }
-
-    .meta {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.5;
-      word-break: break-all;
+    .source-head, .job-head {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px;
     }
-
-    .actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
+    .progress-shell {
+      width: 100%; height: 12px; background: rgba(255,255,255,.08); border-radius: 999px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,.06);
     }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .sources-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .source-item {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px;
-    }
-
-    .source-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0%; }
     .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 8, 18, 0.82);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 9999;
+      position: fixed; inset: 0; background: rgba(2, 8, 18, 0.82); display: none;
+      align-items: center; justify-content: center; padding: 18px; z-index: 9999;
     }
-
-    .modal-backdrop.show {
-      display: flex;
-    }
-
+    .modal-backdrop.show { display: flex; }
     .browser-modal {
-      width: min(840px, 100%);
-      max-height: 86vh;
-      overflow: hidden;
-      background: #0d182b;
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      display: grid;
-      grid-template-rows: auto auto auto 1fr;
+      width: min(900px, 100%); max-height: 86vh; overflow: hidden; background: #0d182b;
+      border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow);
+      display: grid; grid-template-rows: auto auto auto 1fr;
     }
-
     .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      padding: 20px 20px 12px;
-      border-bottom: 1px solid rgba(255,255,255,.04);
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      padding: 20px 20px 12px; border-bottom: 1px solid rgba(255,255,255,.04);
     }
-
-    .modal-sub {
-      padding: 0 20px 16px;
-      color: var(--muted);
-      word-break: break-all;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      padding: 0 20px 16px;
-    }
-
-    .browser-list {
-      overflow: auto;
-      padding: 0 20px 20px;
-      display: grid;
-      gap: 10px;
-      align-content: start;
-    }
-
+    .modal-sub { padding: 0 20px 16px; color: var(--muted); word-break: break-all; }
+    .modal-actions { display: flex; gap: 10px; padding: 0 20px 16px; }
+    .browser-list { overflow: auto; padding: 0 20px 20px; display: grid; gap: 10px; align-content: start; }
     .browser-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 12px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
     }
-
     .editor-modal {
-      width: min(1600px, 100%);
-      height: min(940px, 92vh);
-      background: #0b1830;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      overflow: hidden;
+      width: min(1650px, 100%); height: min(940px, 92vh); background: var(--panel-3);
+      border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow);
+      display: grid; grid-template-columns: 1fr 350px; overflow: hidden;
     }
-
     .editor-main {
-      display: grid;
-      grid-template-rows: auto 1fr auto auto;
-      min-width: 0;
-      background: #091425;
+      display: grid; grid-template-rows: auto 1fr auto auto; min-width: 0; background: #091425;
     }
-
     .editor-topbar {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(255,255,255,.05);
+      display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
+      padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.05);
     }
-
-    .editor-file {
-      min-width: 0;
-    }
-
-    .editor-file .title {
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-
     .editor-video-wrap {
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 0;
-      position: relative;
+      background: #000; display: flex; align-items: center; justify-content: center; min-height: 0; position: relative;
     }
-
     .editor-video-wrap video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: #000;
+      width: 100%; height: 100%; object-fit: contain; background: #000;
     }
-
     .editor-loading {
-      position: absolute;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,.45);
-      font-size: 16px;
-      font-weight: 700;
+      position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.45); font-size: 16px; font-weight: 700;
     }
-
-    .editor-loading.show {
-      display: flex;
-    }
-
+    .editor-loading.show { display: flex; }
     .editor-controls {
-      padding: 14px 16px 10px;
-      border-top: 1px solid rgba(255,255,255,.05);
-      background: #0d1b34;
+      padding: 14px 16px 10px; border-top: 1px solid rgba(255,255,255,.05); background: #0d1b34;
     }
-
     .player-bar {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 12px;
+      display: grid; grid-template-columns: auto auto auto auto 1fr auto; gap: 10px; align-items: center; margin-bottom: 12px;
     }
-
-    .timeline-block {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .timeline-meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
+    .timeline-block { display: grid; gap: 8px; margin-bottom: 10px; }
+    .timeline-meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); }
     .editor-sidebar {
-      border-left: 1px solid rgba(255,255,255,.05);
-      background: #12264a;
-      padding: 16px;
-      overflow-y: auto;
+      border-left: 1px solid rgba(255,255,255,.05); background: #12264a; padding: 16px; overflow-y: auto;
     }
-
     .audio-track {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px;
-      margin-bottom: 10px;
-      background: rgba(0,0,0,.12);
+      border: 1px solid var(--border); border-radius: 14px; padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,.12);
     }
-
-    .audio-head {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .audio-left {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      min-width: 0;
-    }
-
-    .audio-name {
-      font-weight: 700;
-      font-size: 13px;
-    }
-
-    .audio-sub {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .tiny {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .time-badge {
-      font-variant-numeric: tabular-nums;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .editor-actions {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
+    .audio-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .audio-left { display: flex; gap: 8px; align-items: center; min-width: 0; }
+    .audio-name { font-weight: 700; font-size: 13px; }
+    .audio-sub { font-size: 11px; color: var(--muted); }
+    .tiny { font-size: 12px; color: var(--muted); }
+    .time-badge { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); }
+    .editor-actions { display: grid; gap: 10px; margin-top: 14px; }
+    .trim-indicator { color: var(--warning); font-size: 12px; }
     @media (max-width: 1280px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        border-right: 0;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .recording-card {
-        grid-template-columns: 28px 140px 1fr;
-      }
-
-      .actions {
-        grid-column: 1 / -1;
-        justify-content: flex-start;
-      }
-
-      .editor-modal {
-        grid-template-columns: 1fr;
-        height: 95vh;
-      }
-
-      .editor-sidebar {
-        border-left: 0;
-        border-top: 1px solid rgba(255,255,255,.05);
-      }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
+      .recording-card { grid-template-columns: 28px 140px 1fr; }
+      .actions { grid-column: 1 / -1; justify-content: flex-start; }
+      .editor-modal { grid-template-columns: 1fr; height: 95vh; }
+      .editor-sidebar { border-left: 0; border-top: 1px solid rgba(255,255,255,.05); }
+      .player-bar { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -533,30 +209,22 @@
 
       <div class="panel">
         <h3>Add Source</h3>
-
         <div class="field">
           <label class="label">Source Name</label>
           <input id="sourceLabel" placeholder="Elgato" />
         </div>
-
         <div class="field">
           <label class="label">Container Path</label>
           <input id="sourcePath" placeholder="/mnt/recordings/Elgato" />
         </div>
-
         <div class="btn-row">
           <button id="browseSourceBtn">Browse</button>
           <button id="addSourceBtn" class="btn-primary">Add Source</button>
-        </div>
-
-        <div class="muted" style="margin-top: 12px;">
-          Use paths that exist inside the container.
         </div>
       </div>
 
       <div class="panel">
         <h3>Settings</h3>
-
         <div class="field">
           <label class="label">Auto Refresh</label>
           <select id="autoRefresh">
@@ -564,17 +232,14 @@
             <option value="false">Disabled</option>
           </select>
         </div>
-
         <div class="field">
           <label class="label">Refresh Interval (seconds)</label>
           <input id="refreshInterval" type="number" min="5" max="3600" />
         </div>
-
         <div class="field">
           <label class="label">Clips Save Folder</label>
           <input id="clipsPath" placeholder="/data/clips" />
         </div>
-
         <div class="btn-row">
           <button id="browseClipsBtn">Browse</button>
           <button id="saveSettingsBtn" class="btn-primary">Save</button>
@@ -584,6 +249,12 @@
       <div class="panel">
         <h3>Sources</h3>
         <div id="sourcesList" class="sources-list"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Remux Jobs</h3>
+        <div class="muted" style="margin-bottom:10px;">MKV files are remuxed to MP4, then the original MKV is removed.</div>
+        <div id="jobsList" class="jobs-list"></div>
       </div>
     </aside>
 
@@ -602,6 +273,7 @@
               <option value="">All Sources</option>
             </select>
             <button id="reloadRecordingsBtn">Reload</button>
+            <button id="remuxSelectedBtn" class="btn-warning">Remux Selected</button>
             <button id="deleteSelectedRecordingsBtn" class="btn-danger">Delete Selected</button>
           </div>
         </div>
@@ -639,7 +311,7 @@
     <div class="editor-modal">
       <div class="editor-main">
         <div class="editor-topbar">
-          <div class="editor-file">
+          <div>
             <div id="editorFileName" class="title">Preview</div>
             <div id="editorFilePath" class="meta"></div>
             <div id="editorStatus" class="tiny"></div>
@@ -654,63 +326,49 @@
 
         <div class="editor-controls">
           <div class="player-bar">
-            <div class="btn-row" style="max-width: 160px;">
-              <button id="jumpBackBtn">-5s</button>
-              <button id="jumpForwardBtn">+5s</button>
-            </div>
+            <button id="jumpBackBtn" style="width:auto;">-5s</button>
+            <button id="togglePlayBtn" style="width:auto;">Play</button>
+            <button id="jumpForwardBtn" style="width:auto;">+5s</button>
+            <button id="addTrimBtn" class="btn-warning" style="width:auto;">Add Trim</button>
             <input id="seekSlider" type="range" min="0" max="1000" value="0" />
-            <div class="time-badge">
-              <span id="currentTimeLabel">0:00</span> /
-              <span id="durationLabel">0:00</span>
-            </div>
+            <div class="time-badge"><span id="currentTimeLabel">0:00</span> / <span id="durationLabel">0:00</span></div>
           </div>
+          <div id="trimStateLabel" class="trim-indicator">Trim button sets start, then end, from the playhead.</div>
 
           <div class="timeline-block">
-            <div class="timeline-meta">
-              <span>Start Handle</span>
-              <span id="startLabel">0:00</span>
-            </div>
+            <div class="timeline-meta"><span>Start Handle</span><span id="startLabel">0:00</span></div>
             <input id="startSlider" type="range" min="0" max="0" step="0.01" value="0" />
           </div>
 
           <div class="timeline-block">
-            <div class="timeline-meta">
-              <span>End Handle</span>
-              <span id="endLabel">0:00</span>
-            </div>
+            <div class="timeline-meta"><span>End Handle</span><span id="endLabel">0:00</span></div>
             <input id="endSlider" type="range" min="0" max="0" step="0.01" value="0" />
           </div>
 
-          <div class="timeline-meta">
-            <span>Selected Range</span>
-            <span id="rangeLabel">0:00 → 0:00</span>
-          </div>
+          <div class="timeline-meta"><span>Selected Range</span><span id="rangeLabel">0:00 → 0:00</span></div>
         </div>
 
-        <div class="editor-controls" style="padding-top: 10px;">
+        <div class="editor-controls" style="padding-top:10px;">
           <div class="toolbar">
-            <button id="setStartFromCurrentBtn">Set Start From Playhead</button>
-            <button id="setEndFromCurrentBtn">Set End From Playhead</button>
+            <button id="setStartFromCurrentBtn" style="width:auto;">Set Start</button>
+            <button id="setEndFromCurrentBtn" style="width:auto;">Set End</button>
+            <button id="clearTrimBtn" style="width:auto;">Clear Trim</button>
           </div>
         </div>
       </div>
 
       <aside class="editor-sidebar">
         <h3 style="margin-bottom:10px;">Clip Output</h3>
-        <div class="muted" style="margin-bottom:16px;">
-          Fast Cut / Remux is stream copy. Accurate Clip re-encodes and is required for true audio mixing.
-        </div>
+        <div class="muted" style="margin-bottom:16px;">Fast Cut / Remux uses stream copy. Accurate Clip re-encodes and allows audio mixing.</div>
 
         <div class="field">
           <label class="label">Clip Title</label>
           <input id="clipTitle" />
         </div>
-
         <div class="field">
           <label class="label">Game</label>
           <input id="clipGame" value="Unknown" />
         </div>
-
         <div class="field">
           <label class="label">Mode</label>
           <select id="clipMode">
@@ -718,7 +376,6 @@
             <option value="transcode">Accurate Clip</option>
           </select>
         </div>
-
         <div class="field">
           <label class="label">Output Container</label>
           <select id="clipContainer">
@@ -726,7 +383,6 @@
             <option value="mkv">MKV</option>
           </select>
         </div>
-
         <div class="field">
           <label class="label">Audio Output</label>
           <select id="audioMode">
@@ -734,12 +390,10 @@
             <option value="mix">Mix selected tracks into one track</option>
           </select>
         </div>
-
         <div class="field">
           <label class="label">Start (seconds)</label>
           <input id="clipStartInput" type="number" min="0" step="0.01" value="0" />
         </div>
-
         <div class="field">
           <label class="label">End (seconds)</label>
           <input id="clipEndInput" type="number" min="0" step="0.01" value="0" />
@@ -760,42 +414,41 @@
       selectedRecordingPaths: new Set(),
       selectedClipPaths: new Set(),
       browserTarget: null,
-      browserCurrentPath: "/",
+      browserCurrentPath: '/',
+      browserParentPath: '/',
       autoRefreshTimer: null,
       currentRecording: null,
       currentDuration: 0,
       audioTracks: [],
       audioGains: {},
-      editorReady: false,
+      trimStage: 'start',
+      activeJobIds: new Set(),
     };
 
     const $ = (id) => document.getElementById(id);
 
     function escapeHtml(value) {
       return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
-    function showStatus(message, type = "success") {
-      const box = $("statusBox");
+    function showStatus(message, type = 'success') {
+      const box = $('statusBox');
       box.textContent = message;
       box.className = `status show ${type}`;
       clearTimeout(showStatus._t);
-      showStatus._t = setTimeout(() => {
-        box.className = "status";
-      }, 4000);
+      showStatus._t = setTimeout(() => box.className = 'status', 4500);
     }
 
     async function api(url, options = {}) {
       const response = await fetch(url, {
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
         ...options,
       });
-
       const text = await response.text();
       let data = {};
       try {
@@ -803,22 +456,15 @@
       } catch {
         throw new Error(text || `Request failed: ${response.status}`);
       }
-
-      if (!response.ok) {
-        throw new Error(data.detail || `Request failed: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(data.detail || `Request failed: ${response.status}`);
       return data;
     }
 
     function fmtBytes(bytes = 0) {
-      const units = ["B", "KB", "MB", "GB", "TB"];
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
       let i = 0;
       let n = bytes;
-      while (n >= 1024 && i < units.length - 1) {
-        n /= 1024;
-        i++;
-      }
+      while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
       return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
     }
 
@@ -831,29 +477,26 @@
       const h = Math.floor(sec / 3600);
       const m = Math.floor((sec % 3600) / 60);
       const s = Math.floor(sec % 60);
-      if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-      return `${m}:${String(s).padStart(2, "0")}`;
+      if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      return `${m}:${String(s).padStart(2, '0')}`;
     }
 
     function switchTab(tabId) {
-      document.querySelectorAll(".tab").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.tab === tabId);
-      });
-      $("recordingsTab").classList.toggle("hidden", tabId !== "recordingsTab");
-      $("clipsTab").classList.toggle("hidden", tabId !== "clipsTab");
+      document.querySelectorAll('.tab').forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabId));
+      $('recordingsTab').classList.toggle('hidden', tabId !== 'recordingsTab');
+      $('clipsTab').classList.toggle('hidden', tabId !== 'clipsTab');
     }
 
     async function loadSources() {
-      const data = await api("/api/sources");
-      const wrap = $("sourcesList");
-      const filter = $("sourceFilter");
-
-      wrap.innerHTML = "";
+      const data = await api('/api/sources');
+      const wrap = $('sourcesList');
+      const filter = $('sourceFilter');
+      wrap.innerHTML = '';
       filter.innerHTML = `<option value="">All Sources</option>`;
 
       for (const source of data.sources) {
-        const el = document.createElement("div");
-        el.className = "source-item";
+        const el = document.createElement('div');
+        el.className = 'source-item';
         el.innerHTML = `
           <div class="source-head">
             <div>
@@ -862,106 +505,117 @@
               <div class="meta">${source.count} recordings</div>
             </div>
             <button class="btn-danger" data-remove="${escapeHtml(source.label)}" style="width:auto;">Remove</button>
-          </div>
-        `;
+          </div>`;
         wrap.appendChild(el);
 
-        const opt = document.createElement("option");
+        const opt = document.createElement('option');
         opt.value = source.label;
         opt.textContent = source.label;
         filter.appendChild(opt);
       }
 
-      wrap.querySelectorAll("[data-remove]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const label = btn.getAttribute("data-remove");
+      wrap.querySelectorAll('[data-remove]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const label = btn.getAttribute('data-remove');
           if (!confirm(`Remove source "${label}"?`)) return;
           try {
-            await api(`/api/sources/${encodeURIComponent(label)}`, { method: "DELETE" });
+            await api(`/api/sources/${encodeURIComponent(label)}`, { method: 'DELETE' });
             showStatus(`Removed source: ${label}`);
             await Promise.all([loadSources(), loadRecordings()]);
           } catch (err) {
-            showStatus(err.message, "error");
+            showStatus(err.message, 'error');
           }
         });
       });
     }
 
     async function loadSettings() {
-      const data = await api("/api/settings");
-      $("autoRefresh").value = String(data.auto_refresh);
-      $("refreshInterval").value = data.refresh_interval;
-      $("clipsPath").value = data.clips_path || "/data/clips";
+      const data = await api('/api/settings');
+      $('autoRefresh').value = String(data.auto_refresh);
+      $('refreshInterval').value = data.refresh_interval;
+      $('clipsPath').value = data.clips_path || '/data/clips';
       resetAutoRefresh();
     }
 
     async function saveSettings() {
-      await api("/api/settings", {
-        method: "PUT",
+      await api('/api/settings', {
+        method: 'PUT',
         body: JSON.stringify({
-          auto_refresh: $("autoRefresh").value === "true",
-          refresh_interval: Number($("refreshInterval").value || 20),
-          clips_path: $("clipsPath").value.trim(),
+          auto_refresh: $('autoRefresh').value === 'true',
+          refresh_interval: Number($('refreshInterval').value || 20),
+          clips_path: $('clipsPath').value.trim(),
         }),
       });
-      showStatus("Settings saved");
+      showStatus('Settings saved');
       resetAutoRefresh();
     }
 
     async function loadRecordings() {
-      const source = $("sourceFilter").value;
-      const query = source ? `?source=${encodeURIComponent(source)}` : "";
+      const source = $('sourceFilter').value;
+      const query = source ? `?source=${encodeURIComponent(source)}` : '';
       const data = await api(`/api/recordings${query}`);
-      const list = $("recordingsList");
-      list.innerHTML = "";
+      const list = $('recordingsList');
+      list.innerHTML = '';
 
       for (const rec of data.recordings) {
-        const checked = state.selectedRecordingPaths.has(rec.path) ? "checked" : "";
-        const card = document.createElement("div");
-        card.className = "recording-card";
+        const checked = state.selectedRecordingPaths.has(rec.path) ? 'checked' : '';
+        const remuxDisabled = rec.ext !== '.mkv' ? 'disabled' : '';
+        const card = document.createElement('div');
+        card.className = 'recording-card';
         card.innerHTML = `
           <input type="checkbox" data-recording="${escapeHtml(rec.path)}" ${checked} />
           <img class="thumb" src="/api/recordings/thumbnail?path=${encodeURIComponent(rec.path)}&time_pos=1" alt="" loading="lazy" />
           <div>
             <div class="title">${escapeHtml(rec.name)}</div>
-            <div class="meta">${escapeHtml(rec.source)} • ${fmtBytes(rec.size)}</div>
+            <div class="meta">${escapeHtml(rec.source)} • ${fmtBytes(rec.size)} • ${escapeHtml(rec.ext)}</div>
             <div class="meta">${fmtDate(rec.modified)}</div>
             <div class="meta">${escapeHtml(rec.path)}</div>
           </div>
           <div class="actions">
-            <button data-preview="${escapeHtml(rec.path)}" style="width:auto;">Open Editor</button>
-          </div>
-        `;
+            <button data-editor="${escapeHtml(rec.path)}" style="width:auto;">Open Editor</button>
+            <button data-remux="${escapeHtml(rec.path)}" class="btn-warning" style="width:auto;" ${remuxDisabled}>Remux</button>
+          </div>`;
         list.appendChild(card);
       }
 
-      list.querySelectorAll("[data-recording]").forEach((cb) => {
-        cb.addEventListener("change", () => {
-          const path = cb.getAttribute("data-recording");
+      list.querySelectorAll('[data-recording]').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          const path = cb.getAttribute('data-recording');
           if (cb.checked) state.selectedRecordingPaths.add(path);
           else state.selectedRecordingPaths.delete(path);
         });
       });
 
-      list.querySelectorAll("[data-preview]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const path = btn.getAttribute("data-preview");
+      list.querySelectorAll('[data-editor]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const path = btn.getAttribute('data-editor');
           const rec = data.recordings.find((r) => r.path === path);
           if (rec) await openEditor(rec);
+        });
+      });
+
+      list.querySelectorAll('[data-remux]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const path = btn.getAttribute('data-remux');
+          try {
+            await startRemux([path]);
+          } catch (err) {
+            showStatus(err.message, 'error');
+          }
         });
       });
     }
 
     async function loadClips() {
-      const data = await api("/api/clips");
-      const list = $("clipsList");
-      list.innerHTML = "";
+      const data = await api('/api/clips');
+      const list = $('clipsList');
+      list.innerHTML = '';
 
       for (const clip of data.clips) {
-        const checked = state.selectedClipPaths.has(clip.path) ? "checked" : "";
-        const modeLabel = clip.meta?.mode ? ` • ${clip.meta.mode}` : "";
-        const card = document.createElement("div");
-        card.className = "clip-card";
+        const checked = state.selectedClipPaths.has(clip.path) ? 'checked' : '';
+        const modeLabel = clip.meta?.mode ? ` • ${clip.meta.mode}` : '';
+        const card = document.createElement('div');
+        card.className = 'clip-card';
         card.innerHTML = `
           <input type="checkbox" data-clip="${escapeHtml(clip.path)}" ${checked} />
           <div>
@@ -971,43 +625,32 @@
           </div>
           <div class="actions">
             <button data-play="${escapeHtml(clip.path)}" style="width:auto;">Play</button>
-            <a href="/api/clips/download?path=${encodeURIComponent(clip.path)}">
-              <button type="button" style="width:auto;">Download</button>
-            </a>
-          </div>
-        `;
+            <a href="/api/clips/download?path=${encodeURIComponent(clip.path)}"><button type="button" style="width:auto;">Download</button></a>
+          </div>`;
         list.appendChild(card);
       }
 
-      list.querySelectorAll("[data-clip]").forEach((cb) => {
-        cb.addEventListener("change", () => {
-          const path = cb.getAttribute("data-clip");
+      list.querySelectorAll('[data-clip]').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          const path = cb.getAttribute('data-clip');
           if (cb.checked) state.selectedClipPaths.add(path);
           else state.selectedClipPaths.delete(path);
         });
       });
 
-      list.querySelectorAll("[data-play]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const path = btn.getAttribute("data-play");
-          window.open(`/stream/clip?path=${encodeURIComponent(path)}`, "_blank");
+      list.querySelectorAll('[data-play]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const path = btn.getAttribute('data-play');
+          window.open(`/stream/clip?path=${encodeURIComponent(path)}`, '_blank');
         });
       });
     }
 
     async function deleteSelectedRecordings() {
       const paths = [...state.selectedRecordingPaths];
-      if (!paths.length) {
-        showStatus("No recordings selected", "error");
-        return;
-      }
+      if (!paths.length) return showStatus('No recordings selected', 'error');
       if (!confirm(`Delete ${paths.length} recording(s)?`)) return;
-
-      const result = await api("/api/recordings/delete", {
-        method: "POST",
-        body: JSON.stringify({ paths }),
-      });
-
+      const result = await api('/api/recordings/delete', { method: 'POST', body: JSON.stringify({ paths }) });
       state.selectedRecordingPaths.clear();
       showStatus(`Deleted ${result.deleted} recording(s)`);
       await loadRecordings();
@@ -1015,507 +658,424 @@
 
     async function deleteSelectedClips() {
       const paths = [...state.selectedClipPaths];
-      if (!paths.length) {
-        showStatus("No clips selected", "error");
-        return;
-      }
+      if (!paths.length) return showStatus('No clips selected', 'error');
       if (!confirm(`Delete ${paths.length} clip(s)?`)) return;
-
-      const result = await api("/api/clips/delete", {
-        method: "POST",
-        body: JSON.stringify({ paths }),
-      });
-
+      const result = await api('/api/clips/delete', { method: 'POST', body: JSON.stringify({ paths }) });
       state.selectedClipPaths.clear();
       showStatus(`Deleted ${result.deleted} clip(s)`);
       await loadClips();
     }
 
     async function addSource() {
-      const label = $("sourceLabel").value.trim();
-      const path = $("sourcePath").value.trim();
-
-      if (!label || !path) {
-        showStatus("Label and path are required", "error");
-        return;
-      }
-
-      await api("/api/sources", {
-        method: "POST",
-        body: JSON.stringify({ label, path }),
-      });
-
-      $("sourceLabel").value = "";
-      showStatus("Source added");
+      const label = $('sourceLabel').value.trim();
+      const path = $('sourcePath').value.trim();
+      if (!label || !path) return showStatus('Label and path are required', 'error');
+      await api('/api/sources', { method: 'POST', body: JSON.stringify({ label, path }) });
+      $('sourceLabel').value = '';
+      showStatus('Source added');
       await Promise.all([loadSources(), loadRecordings()]);
     }
 
     function openBrowser(target) {
       state.browserTarget = target;
-      $("browserModal").classList.add("show");
-      browse(target === "clips" ? ($("clipsPath").value.trim() || "/") : "/mnt/recordings");
+      $('browserModal').classList.add('show');
+      const seed = target === 'clips' ? ($('clipsPath').value.trim() || '/') : '/mnt/recordings';
+      browse(seed);
     }
 
     function closeBrowser() {
-      $("browserModal").classList.remove("show");
+      $('browserModal').classList.remove('show');
     }
 
-    async function browse(path = "/") {
-      try {
-        const data = await api(`/api/browse?path=${encodeURIComponent(path)}`);
-        state.browserCurrentPath = data.path;
-        $("browserPath").textContent = data.path;
+    async function browse(path = '/') {
+      const data = await api(`/api/browse?path=${encodeURIComponent(path)}`);
+      state.browserCurrentPath = data.path;
+      state.browserParentPath = data.parent;
+      $('browserPath').textContent = data.path;
+      const list = $('browserList');
+      list.innerHTML = '';
 
-        const list = $("browserList");
-        list.innerHTML = "";
-
-        if (!data.directories.length) {
-          const empty = document.createElement("div");
-          empty.className = "source-item";
-          empty.innerHTML = `<div class="muted">No folders found here.</div>`;
-          list.appendChild(empty);
-          return;
-        }
-
-        for (const dir of data.directories) {
-          const row = document.createElement("div");
-          row.className = "browser-item";
-          row.innerHTML = `
-            <div>
-              <div class="title" style="margin:0;">${escapeHtml(dir.name)}</div>
-              <div class="meta">${escapeHtml(dir.path)}</div>
-            </div>
-            <button data-open="${escapeHtml(dir.path)}" style="width:auto;">Open</button>
-          `;
-          list.appendChild(row);
-        }
-
-        list.querySelectorAll("[data-open]").forEach((btn) => {
-          btn.addEventListener("click", () => browse(btn.getAttribute("data-open")));
-        });
-      } catch (err) {
-        showStatus(err.message, "error");
+      if (!data.directories.length) {
+        const empty = document.createElement('div');
+        empty.className = 'source-item';
+        empty.innerHTML = `<div class="muted">No folders found here.</div>`;
+        list.appendChild(empty);
+        return;
       }
+
+      for (const dir of data.directories) {
+        const row = document.createElement('div');
+        row.className = 'browser-item';
+        row.innerHTML = `
+          <div>
+            <div class="title" style="margin:0;">${escapeHtml(dir.name)}</div>
+            <div class="meta">${escapeHtml(dir.path)}</div>
+          </div>
+          <button data-open="${escapeHtml(dir.path)}" style="width:auto;">Open</button>`;
+        list.appendChild(row);
+      }
+
+      list.querySelectorAll('[data-open]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          await browse(btn.getAttribute('data-open'));
+        });
+      });
     }
 
     function chooseBrowserPath() {
-      if (state.browserTarget === "source") {
-        $("sourcePath").value = state.browserCurrentPath;
-      } else if (state.browserTarget === "clips") {
-        $("clipsPath").value = state.browserCurrentPath;
-      }
+      if (state.browserTarget === 'source') $('sourcePath').value = state.browserCurrentPath;
+      else if (state.browserTarget === 'clips') $('clipsPath').value = state.browserCurrentPath;
       closeBrowser();
     }
 
     function resetAutoRefresh() {
-      if (state.autoRefreshTimer) {
-        clearInterval(state.autoRefreshTimer);
-        state.autoRefreshTimer = null;
-      }
-
-      const enabled = $("autoRefresh").value === "true";
-      const seconds = Number($("refreshInterval").value || 20);
-
+      if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
+      state.autoRefreshTimer = null;
+      const enabled = $('autoRefresh').value === 'true';
+      const seconds = Number($('refreshInterval').value || 20);
       if (enabled && seconds >= 5) {
         state.autoRefreshTimer = setInterval(async () => {
           try {
-            await loadSources();
-            await loadRecordings();
-            await loadClips();
+            await Promise.all([loadSources(), loadRecordings(), loadClips(), refreshJobs()]);
           } catch (_) {}
         }, seconds * 1000);
       }
     }
 
     function syncTimeUi() {
-      const start = Number($("startSlider").value || 0);
-      const end = Number($("endSlider").value || 0);
-      $("startLabel").textContent = fmtTime(start);
-      $("endLabel").textContent = fmtTime(end);
-      $("rangeLabel").textContent = `${fmtTime(start)} → ${fmtTime(end)}`;
-      $("clipStartInput").value = start.toFixed(2);
-      $("clipEndInput").value = end.toFixed(2);
+      const start = Number($('startSlider').value || 0);
+      const end = Number($('endSlider').value || 0);
+      $('startLabel').textContent = fmtTime(start);
+      $('endLabel').textContent = fmtTime(end);
+      $('rangeLabel').textContent = `${fmtTime(start)} → ${fmtTime(end)}`;
+      $('clipStartInput').value = start.toFixed(2);
+      $('clipEndInput').value = end.toFixed(2);
     }
 
     function clampTimeline() {
-      let start = Number($("startSlider").value || 0);
-      let end = Number($("endSlider").value || 0);
+      let start = Number($('startSlider').value || 0);
+      let end = Number($('endSlider').value || 0);
       if (start > end) {
-        const active = document.activeElement;
-        if (active === $("startSlider")) end = start;
+        if (document.activeElement === $('startSlider')) end = start;
         else start = end;
       }
-      $("startSlider").value = start;
-      $("endSlider").value = end;
+      $('startSlider').value = start;
+      $('endSlider').value = end;
       syncTimeUi();
     }
 
     function syncFromInputs() {
-      let start = Number($("clipStartInput").value || 0);
-      let end = Number($("clipEndInput").value || 0);
+      let start = Number($('clipStartInput').value || 0);
+      let end = Number($('clipEndInput').value || 0);
       start = Math.max(0, Math.min(start, state.currentDuration || 0));
       end = Math.max(0, Math.min(end, state.currentDuration || 0));
       if (start > end) start = end;
-      $("startSlider").value = start;
-      $("endSlider").value = end;
+      $('startSlider').value = start;
+      $('endSlider').value = end;
       syncTimeUi();
     }
 
     function updateSeekUi() {
-      const video = $("editorVideo");
+      const video = $('editorVideo');
       const duration = state.currentDuration || 0;
       const current = Number(video.currentTime || 0);
-      $("currentTimeLabel").textContent = fmtTime(current);
-      $("durationLabel").textContent = fmtTime(duration);
-      $("seekSlider").value = duration > 0 ? Math.round((current / duration) * 1000) : 0;
+      $('currentTimeLabel').textContent = fmtTime(current);
+      $('durationLabel').textContent = fmtTime(duration);
+      $('seekSlider').value = duration > 0 ? Math.round((current / duration) * 1000) : 0;
+      $('togglePlayBtn').textContent = video.paused ? 'Play' : 'Pause';
     }
 
     function renderAudioTracks(tracks) {
-      const wrap = $("audioTracksWrap");
-      wrap.innerHTML = "";
+      const wrap = $('audioTracksWrap');
+      wrap.innerHTML = '';
       state.audioGains = {};
-
       if (!tracks.length) {
         wrap.innerHTML = `<div class="muted">No audio tracks detected.</div>`;
         return;
       }
-
       for (const track of tracks) {
         state.audioGains[String(track.stream_index)] = 0;
-
-        const titleBits = [];
-        titleBits.push(`Track ${track.track_number}`);
-        if (track.title) titleBits.push(track.title);
-        if (track.language) titleBits.push(track.language);
-
-        const subBits = [];
-        if (track.codec) subBits.push(track.codec);
-        if (track.channels) subBits.push(`${track.channels}ch`);
-        if (track.sample_rate) subBits.push(`${track.sample_rate} Hz`);
-
-        const row = document.createElement("div");
-        row.className = "audio-track";
+        const row = document.createElement('div');
+        row.className = 'audio-track';
         row.innerHTML = `
           <div class="audio-head">
             <div class="audio-left">
               <input type="checkbox" data-audio-check="${track.stream_index}" checked />
               <div>
-                <div class="audio-name">${escapeHtml(titleBits.join(" • "))}</div>
-                <div class="audio-sub">${escapeHtml(subBits.join(" • "))}</div>
+                <div class="audio-name">Track ${track.track_number}${track.title ? ' • ' + escapeHtml(track.title) : ''}</div>
+                <div class="audio-sub">${escapeHtml(track.codec || 'unknown')} • ${track.channels || 0}ch${track.language ? ' • ' + escapeHtml(track.language) : ''}</div>
               </div>
             </div>
             <div class="tiny">Gain</div>
           </div>
           <input type="range" min="-24" max="24" step="0.5" value="0" data-audio-gain="${track.stream_index}" />
-          <div class="tiny" id="gainLabel_${track.stream_index}">0 dB</div>
-        `;
+          <div class="tiny" id="gainLabel_${track.stream_index}">0 dB</div>`;
         wrap.appendChild(row);
       }
-
-      wrap.querySelectorAll("[data-audio-gain]").forEach((slider) => {
-        slider.addEventListener("input", () => {
-          const key = slider.getAttribute("data-audio-gain");
+      wrap.querySelectorAll('[data-audio-gain]').forEach((slider) => {
+        slider.addEventListener('input', () => {
+          const key = slider.getAttribute('data-audio-gain');
           const value = Number(slider.value || 0);
           state.audioGains[key] = value;
-          $(`gainLabel_${key}`).textContent = `${value} dB`;
+          const label = document.getElementById(`gainLabel_${key}`);
+          if (label) label.textContent = `${value} dB`;
         });
       });
     }
 
     function selectedAudioTracks() {
-      return [...document.querySelectorAll("[data-audio-check]:checked")]
-        .map((el) => Number(el.getAttribute("data-audio-check")));
+      return [...document.querySelectorAll('[data-audio-check]:checked')].map((el) => Number(el.getAttribute('data-audio-check')));
     }
 
-    function setEditorLoading(show, message = "Preparing preview...") {
-      $("editorLoading").classList.toggle("show", show);
-      $("editorLoading").textContent = message;
+    function setEditorLoading(show, message = 'Preparing preview...') {
+      $('editorLoading').classList.toggle('show', show);
+      $('editorLoading').textContent = message;
+    }
+
+    function resetTrimUi() {
+      state.trimStage = 'start';
+      $('trimStateLabel').textContent = 'Trim button sets start, then end, from the playhead.';
     }
 
     async function waitForVideoMetadata(video) {
       return new Promise((resolve, reject) => {
         let done = false;
-
         const cleanup = () => {
-          video.removeEventListener("loadedmetadata", onLoaded);
-          video.removeEventListener("error", onError);
+          video.removeEventListener('loadedmetadata', onLoaded);
+          video.removeEventListener('error', onError);
         };
-
-        const onLoaded = () => {
-          if (done) return;
-          done = true;
-          cleanup();
-          resolve();
-        };
-
-        const onError = () => {
-          if (done) return;
-          done = true;
-          cleanup();
-          reject(new Error("Preview failed to load"));
-        };
-
-        video.addEventListener("loadedmetadata", onLoaded);
-        video.addEventListener("error", onError);
-
-        setTimeout(() => {
-          if (done) return;
-          done = true;
-          cleanup();
-          reject(new Error("Preview timed out"));
-        }, 60000);
+        const onLoaded = () => { if (done) return; done = true; cleanup(); resolve(); };
+        const onError = () => { if (done) return; done = true; cleanup(); reject(new Error('Preview failed to load')); };
+        video.addEventListener('loadedmetadata', onLoaded);
+        video.addEventListener('error', onError);
+        setTimeout(() => { if (done) return; done = true; cleanup(); reject(new Error('Preview timed out')); }, 60000);
       });
     }
 
     async function openEditor(rec) {
       state.currentRecording = rec;
-      state.editorReady = false;
-
-      $("editorModal").classList.add("show");
-      $("editorFileName").textContent = rec.name;
-      $("editorFilePath").textContent = rec.path;
-      $("editorStatus").textContent = "Reading media info...";
-      $("clipTitle").value = rec.name.replace(/\.[^.]+$/, "");
-      $("clipGame").value = "Unknown";
-      $("clipMode").value = "copy";
-      $("clipContainer").value = "mp4";
-      $("audioMode").value = "keep";
+      $('editorModal').classList.add('show');
+      $('editorFileName').textContent = rec.name;
+      $('editorFilePath').textContent = rec.path;
+      $('editorStatus').textContent = 'Reading media info...';
+      $('clipTitle').value = rec.name.replace(/\.[^.]+$/, '');
+      $('clipGame').value = 'Unknown';
+      $('clipMode').value = 'copy';
+      $('clipContainer').value = 'mp4';
+      $('audioMode').value = 'keep';
+      resetTrimUi();
 
       const info = await api(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
       state.currentDuration = Number(info.duration || 0);
       state.audioTracks = info.audio_tracks || [];
-
-      $("startSlider").max = state.currentDuration;
-      $("endSlider").max = state.currentDuration;
-      $("startSlider").value = 0;
-      $("endSlider").value = state.currentDuration;
+      $('startSlider').max = state.currentDuration;
+      $('endSlider').max = state.currentDuration;
+      $('startSlider').value = 0;
+      $('endSlider').value = state.currentDuration;
       syncTimeUi();
       renderAudioTracks(state.audioTracks);
+      $('durationLabel').textContent = fmtTime(state.currentDuration);
+      $('currentTimeLabel').textContent = '0:00';
+      $('seekSlider').value = 0;
 
-      $("durationLabel").textContent = fmtTime(state.currentDuration);
-      $("currentTimeLabel").textContent = "0:00";
-      $("seekSlider").value = 0;
-
-      const video = $("editorVideo");
+      const video = $('editorVideo');
       video.pause();
-      video.removeAttribute("src");
+      video.removeAttribute('src');
       video.load();
-
-      setEditorLoading(true, "Preparing preview...");
-      $("editorStatus").textContent = `Preview strategy: ${info.preview_strategy}`;
+      setEditorLoading(true, 'Preparing preview...');
+      $('editorStatus').textContent = `Preview strategy: ${info.preview_strategy}`;
 
       try {
         const preview = await api(`/api/recordings/preview?path=${encodeURIComponent(rec.path)}`);
-        $("editorStatus").textContent = `Preview strategy: ${preview.strategy}`;
+        $('editorStatus').textContent = `Preview strategy: ${preview.strategy}`;
         video.src = preview.url;
         video.load();
         await waitForVideoMetadata(video);
-
         if (Number.isFinite(video.duration) && video.duration > 0) {
           state.currentDuration = Number(video.duration);
-          $("startSlider").max = state.currentDuration;
-          $("endSlider").max = state.currentDuration;
-          if (Number($("endSlider").value || 0) === 0) {
-            $("endSlider").value = state.currentDuration;
-          }
+          $('startSlider').max = state.currentDuration;
+          $('endSlider').max = state.currentDuration;
+          $('endSlider').value = state.currentDuration;
           syncTimeUi();
         }
-
         updateSeekUi();
-        state.editorReady = true;
       } catch (err) {
-        $("editorStatus").textContent = err.message;
-        showStatus(err.message, "error");
+        $('editorStatus').textContent = err.message;
+        showStatus(err.message, 'error');
       } finally {
         setEditorLoading(false);
       }
     }
 
     function closeEditor() {
-      $("editorModal").classList.remove("show");
-      state.editorReady = false;
-      const video = $("editorVideo");
+      $('editorModal').classList.remove('show');
+      const video = $('editorVideo');
       video.pause();
-      video.removeAttribute("src");
+      video.removeAttribute('src');
       video.load();
-      $("editorStatus").textContent = "";
+      $('editorStatus').textContent = '';
+    }
+
+    function handleAddTrim() {
+      const current = Number($('editorVideo').currentTime || 0).toFixed(2);
+      if (state.trimStage === 'start') {
+        $('startSlider').value = current;
+        clampTimeline();
+        state.trimStage = 'end';
+        $('trimStateLabel').textContent = 'Start set. Press Add Trim again to set the end.';
+      } else {
+        $('endSlider').value = current;
+        clampTimeline();
+        state.trimStage = 'start';
+        $('trimStateLabel').textContent = 'End set. Press Add Trim again to start a new trim.';
+      }
     }
 
     async function createClip() {
-      if (!state.currentRecording) {
-        showStatus("No recording loaded", "error");
-        return;
-      }
-
+      if (!state.currentRecording) return showStatus('No recording loaded', 'error');
       const selectedTracks = selectedAudioTracks();
       const payload = {
         filepath: state.currentRecording.path,
         source_label: state.currentRecording.source,
-        start: Number($("clipStartInput").value || 0),
-        end: Number($("clipEndInput").value || 0),
-        title: $("clipTitle").value.trim() || "clip",
-        game: $("clipGame").value.trim() || "Unknown",
-        mode: $("clipMode").value,
-        container: $("clipContainer").value,
+        start: Number($('clipStartInput').value || 0),
+        end: Number($('clipEndInput').value || 0),
+        title: $('clipTitle').value.trim() || 'clip',
+        game: $('clipGame').value.trim() || 'Unknown',
+        mode: $('clipMode').value,
+        container: $('clipContainer').value,
         selected_audio_tracks: selectedTracks,
-        audio_mode: $("audioMode").value,
+        audio_mode: $('audioMode').value,
         audio_gains: state.audioGains,
       };
-
-      if (payload.end <= payload.start) {
-        showStatus("End time must be greater than start time", "error");
-        return;
+      if (payload.end <= payload.start) return showStatus('End time must be greater than start time', 'error');
+      if (payload.audio_mode === 'mix' && payload.mode !== 'transcode' && selectedTracks.length > 1) {
+        return showStatus('Audio mixing requires Accurate Clip mode', 'error');
       }
-
-      if (payload.audio_mode === "mix" && payload.mode !== "transcode" && selectedTracks.length > 1) {
-        showStatus("Audio mixing requires Accurate Clip mode", "error");
-        return;
-      }
-
-      const result = await api("/api/clip", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
+      const result = await api('/api/clip', { method: 'POST', body: JSON.stringify(payload) });
       showStatus(`Clip created: ${result.clip.name}`);
       await loadClips();
-      switchTab("clipsTab");
+      switchTab('clipsTab');
+    }
+
+    async function startRemux(paths) {
+      const response = await api('/api/recordings/remux', { method: 'POST', body: JSON.stringify({ paths }) });
+      state.activeJobIds.add(response.job_id);
+      showStatus('Remux job started');
+      await refreshJobs();
+    }
+
+    async function remuxSelected() {
+      const paths = [...state.selectedRecordingPaths];
+      if (!paths.length) return showStatus('No recordings selected', 'error');
+      await startRemux(paths);
+    }
+
+    function renderJob(job) {
+      const done = job.status === 'done' || job.status === 'partial' || job.status === 'failed';
+      const itemHtml = (job.items || []).map((item) => `
+        <div class="meta">${escapeHtml(item.source_path || '')} • ${escapeHtml(item.status || '')}${item.error ? ' • ' + escapeHtml(item.error) : ''}</div>`).join('');
+      return `
+        <div class="job-item">
+          <div class="job-head">
+            <div>
+              <div class="title">Remux Job</div>
+              <div class="meta">${escapeHtml(job.message || '')}</div>
+              <div class="meta">${escapeHtml(job.status || '')}${done ? '' : ' • running'}</div>
+            </div>
+            <div class="time-badge">${Number(job.progress || 0).toFixed(1)}%</div>
+          </div>
+          <div class="progress-shell"><div class="progress-bar" style="width:${Number(job.progress || 0)}%"></div></div>
+          <div style="margin-top:8px; display:grid; gap:6px; max-height:160px; overflow:auto;">${itemHtml || '<div class="meta">No files</div>'}</div>
+        </div>`;
+    }
+
+    async function refreshJobs() {
+      const data = await api('/api/jobs');
+      const wrap = $('jobsList');
+      wrap.innerHTML = '';
+      const jobs = (data.jobs || []).slice().reverse();
+      if (!jobs.length) {
+        wrap.innerHTML = '<div class="muted">No remux jobs yet.</div>';
+        return;
+      }
+      jobs.forEach((job) => {
+        const el = document.createElement('div');
+        el.innerHTML = renderJob(job);
+        wrap.appendChild(el.firstElementChild);
+        if (job.status === 'running' || job.status === 'queued') state.activeJobIds.add(job.job_id);
+        else state.activeJobIds.delete(job.job_id);
+      });
+    }
+
+    function scheduleJobPolling() {
+      clearInterval(scheduleJobPolling._timer);
+      scheduleJobPolling._timer = setInterval(async () => {
+        if (!state.activeJobIds.size) return;
+        try {
+          await refreshJobs();
+          await loadRecordings();
+        } catch (_) {}
+      }, 1000);
     }
 
     function bindEvents() {
-      document.querySelectorAll(".tab").forEach((btn) => {
-        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      document.querySelectorAll('.tab').forEach((btn) => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+      $('addSourceBtn').addEventListener('click', () => addSource().catch((err) => showStatus(err.message, 'error')));
+      $('saveSettingsBtn').addEventListener('click', () => saveSettings().catch((err) => showStatus(err.message, 'error')));
+      $('reloadRecordingsBtn').addEventListener('click', () => loadRecordings().catch((err) => showStatus(err.message, 'error')));
+      $('reloadClipsBtn').addEventListener('click', () => loadClips().catch((err) => showStatus(err.message, 'error')));
+      $('sourceFilter').addEventListener('change', () => loadRecordings().catch((err) => showStatus(err.message, 'error')));
+      $('deleteSelectedRecordingsBtn').addEventListener('click', () => deleteSelectedRecordings().catch((err) => showStatus(err.message, 'error')));
+      $('deleteSelectedClipsBtn').addEventListener('click', () => deleteSelectedClips().catch((err) => showStatus(err.message, 'error')));
+      $('remuxSelectedBtn').addEventListener('click', () => remuxSelected().catch((err) => showStatus(err.message, 'error')));
+
+      $('browseSourceBtn').addEventListener('click', () => openBrowser('source'));
+      $('browseClipsBtn').addEventListener('click', () => openBrowser('clips'));
+      $('closeBrowserBtn').addEventListener('click', closeBrowser);
+      $('browserChooseBtn').addEventListener('click', chooseBrowserPath);
+      $('browserUpBtn').addEventListener('click', async () => {
+        await browse(state.browserParentPath || '/');
       });
+      $('browserModal').addEventListener('click', (e) => { if (e.target === $('browserModal')) closeBrowser(); });
 
-      $("addSourceBtn").addEventListener("click", async () => {
-        try {
-          await addSource();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("saveSettingsBtn").addEventListener("click", async () => {
-        try {
-          await saveSettings();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("reloadRecordingsBtn").addEventListener("click", async () => {
-        try {
-          await loadRecordings();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("reloadClipsBtn").addEventListener("click", async () => {
-        try {
-          await loadClips();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("sourceFilter").addEventListener("change", async () => {
-        try {
-          await loadRecordings();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("deleteSelectedRecordingsBtn").addEventListener("click", async () => {
-        try {
-          await deleteSelectedRecordings();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("deleteSelectedClipsBtn").addEventListener("click", async () => {
-        try {
-          await deleteSelectedClips();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("browseSourceBtn").addEventListener("click", () => openBrowser("source"));
-      $("browseClipsBtn").addEventListener("click", () => openBrowser("clips"));
-      $("closeBrowserBtn").addEventListener("click", closeBrowser);
-      $("browserChooseBtn").addEventListener("click", chooseBrowserPath);
-
-      $("browserUpBtn").addEventListener("click", async () => {
-        const current = state.browserCurrentPath || "/";
-        const parent = current === "/" ? "/" : current.split("/").slice(0, -1).join("/") || "/";
-        await browse(parent);
-      });
-
-      $("browserModal").addEventListener("click", (e) => {
-        if (e.target === $("browserModal")) closeBrowser();
-      });
-
-      $("closeEditorBtn").addEventListener("click", closeEditor);
-      $("editorModal").addEventListener("click", (e) => {
-        if (e.target === $("editorModal")) closeEditor();
-      });
-
-      $("setStartFromCurrentBtn").addEventListener("click", () => {
-        $("startSlider").value = Number($("editorVideo").currentTime || 0).toFixed(2);
-        clampTimeline();
-      });
-
-      $("setEndFromCurrentBtn").addEventListener("click", () => {
-        $("endSlider").value = Number($("editorVideo").currentTime || 0).toFixed(2);
-        clampTimeline();
-      });
-
-      $("startSlider").addEventListener("input", clampTimeline);
-      $("endSlider").addEventListener("input", clampTimeline);
-      $("clipStartInput").addEventListener("change", syncFromInputs);
-      $("clipEndInput").addEventListener("change", syncFromInputs);
-
-      $("seekSlider").addEventListener("input", () => {
+      $('closeEditorBtn').addEventListener('click', closeEditor);
+      $('editorModal').addEventListener('click', (e) => { if (e.target === $('editorModal')) closeEditor(); });
+      $('setStartFromCurrentBtn').addEventListener('click', () => { $('startSlider').value = Number($('editorVideo').currentTime || 0).toFixed(2); clampTimeline(); state.trimStage = 'end'; });
+      $('setEndFromCurrentBtn').addEventListener('click', () => { $('endSlider').value = Number($('editorVideo').currentTime || 0).toFixed(2); clampTimeline(); state.trimStage = 'start'; });
+      $('clearTrimBtn').addEventListener('click', () => { $('startSlider').value = 0; $('endSlider').value = state.currentDuration || 0; clampTimeline(); resetTrimUi(); });
+      $('addTrimBtn').addEventListener('click', handleAddTrim);
+      $('startSlider').addEventListener('input', clampTimeline);
+      $('endSlider').addEventListener('input', clampTimeline);
+      $('clipStartInput').addEventListener('change', syncFromInputs);
+      $('clipEndInput').addEventListener('change', syncFromInputs);
+      $('seekSlider').addEventListener('input', () => {
         const duration = state.currentDuration || 0;
-        const ratio = Number($("seekSlider").value || 0) / 1000;
-        $("editorVideo").currentTime = duration * ratio;
+        const ratio = Number($('seekSlider').value || 0) / 1000;
+        $('editorVideo').currentTime = duration * ratio;
       });
-
-      $("jumpBackBtn").addEventListener("click", () => {
-        $("editorVideo").currentTime = Math.max(0, Number($("editorVideo").currentTime || 0) - 5);
+      $('jumpBackBtn').addEventListener('click', () => { $('editorVideo').currentTime = Math.max(0, Number($('editorVideo').currentTime || 0) - 5); });
+      $('jumpForwardBtn').addEventListener('click', () => { $('editorVideo').currentTime = Math.min(state.currentDuration || 0, Number($('editorVideo').currentTime || 0) + 5); });
+      $('togglePlayBtn').addEventListener('click', () => {
+        const video = $('editorVideo');
+        if (video.paused) video.play();
+        else video.pause();
       });
-
-      $("jumpForwardBtn").addEventListener("click", () => {
-        $("editorVideo").currentTime = Math.min(state.currentDuration || 0, Number($("editorVideo").currentTime || 0) + 5);
-      });
-
-      $("editorVideo").addEventListener("timeupdate", updateSeekUi);
-      $("editorVideo").addEventListener("loadedmetadata", updateSeekUi);
-
-      $("createClipBtn").addEventListener("click", async () => {
-        try {
-          await createClip();
-        } catch (err) {
-          showStatus(err.message, "error");
-        }
-      });
-
-      $("autoRefresh").addEventListener("change", resetAutoRefresh);
-      $("refreshInterval").addEventListener("change", resetAutoRefresh);
+      $('editorVideo').addEventListener('timeupdate', updateSeekUi);
+      $('editorVideo').addEventListener('play', updateSeekUi);
+      $('editorVideo').addEventListener('pause', updateSeekUi);
+      $('editorVideo').addEventListener('loadedmetadata', updateSeekUi);
+      $('createClipBtn').addEventListener('click', () => createClip().catch((err) => showStatus(err.message, 'error')));
+      $('autoRefresh').addEventListener('change', resetAutoRefresh);
+      $('refreshInterval').addEventListener('change', resetAutoRefresh);
     }
 
     async function boot() {
       bindEvents();
+      scheduleJobPolling();
       try {
-        await loadSettings();
-        await loadSources();
-        await loadRecordings();
-        await loadClips();
+        await Promise.all([loadSettings(), loadSources(), loadRecordings(), loadClips(), refreshJobs()]);
       } catch (err) {
-        showStatus(err.message, "error");
+        showStatus(err.message, 'error');
       }
     }
 
