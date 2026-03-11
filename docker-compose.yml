@@ -3,7 +3,7 @@ services:
   webclipper:
     build: .
     ports:
-      - "8000:8000"
+      - "8765:8765"
     volumes:
       - webclipper-data:/data
       # Mount your recordings folder (use your host path)
