@@ -893,6 +893,11 @@ body {
         <p style="margin-top:8px;font-size:13px">Enabled</p>
         <label>Refresh interval (seconds)</label>
         <input type="number" id="refresh-interval" value="20" min="5" max="300">
+        <label>Clips save folder</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="clips-path" placeholder="/app/data/clips" style="flex:1">
+          <button class="add-btn" onclick="openFolderBrowser('clips-path')" style="margin-top:0;white-space:nowrap">Browse</button>
+        </div>
         <button class="save-btn" onclick="saveSettings()">Save</button>
         <p style="margin-top:8px;font-size:11px;color:var(--text-dim)">Note: 20 seconds is usually fine. It only lists file names and metadata, it does not copy files.</p>
       </div>
@@ -987,6 +992,11 @@ body {
           Lossless cut (stream copy)
         </label>
       </div>
+
+      <button class="create-clip-btn" id="remux-btn" onclick="remuxCurrentRecording()" style="margin-top:10px;background:#1f66b8">
+        Remux to MP4 (fast, no re-encode)
+      </button>
+      <p id="remux-help" style="margin-top:6px;font-size:11px;color:var(--text-dim)"></p>
 
       <button class="create-clip-btn" id="create-clip-btn" onclick="createClip()">Create Clip</button>
     </div>
@@ -1168,8 +1178,21 @@ async function openEditor(rec) {
   document.getElementById('clip-title').value = rec.name.replace(/\.[^.]+$/, '');
   document.getElementById('editor-overlay').classList.add('visible');
 
-  video.src = `/stream?path=${encodeURIComponent(rec.path)}`;
+  const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
+  const info = await infoRes.json();
+  audioTracks = info.audio_tracks || [];
+  renderAudioTracks();
+
+  const transcode = info.needs_transcode_preview ? '&transcode=1' : '';
+  video.src = `/stream?path=${encodeURIComponent(rec.path)}${transcode}`;
   video.load();
+
+  const remuxHelp = document.getElementById('remux-help');
+  if (info.extension === '.mkv' || info.needs_transcode_preview) {
+    remuxHelp.textContent = 'This format may not preview reliably in Firefox. Remux creates an MP4 in this same folder and removes the source after success.';
+  } else {
+    remuxHelp.textContent = 'Remux creates an MP4 in this same folder quickly without re-encoding (if codecs are MP4-compatible).';
+  }
 
   video.onloadedmetadata = () => {
     editorDuration = video.duration;
@@ -1181,11 +1204,6 @@ async function openEditor(rec) {
     updateTrimUI();
     updatePlayerTime();
   };
-
-  const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
-  const info = await infoRes.json();
-  audioTracks = info.audio_tracks || [];
-  renderAudioTracks();
 }
 
 function closeEditor() {
@@ -1362,6 +1380,61 @@ async function createClip() {
   btn.textContent = 'Create Clip';
 }
 
+async function remuxCurrentRecording() {
+  if (!editorFile) return;
+  const btn = document.getElementById('remux-btn');
+  btn.disabled = true;
+  btn.textContent = 'Remuxing...';
+
+  try {
+    const res = await fetch(`/api/recordings/remux?path=${encodeURIComponent(editorFile.path)}`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(`Remux failed: ${data.detail || 'Unknown error'}`, 'error');
+      return;
+    }
+
+    const statusEl = document.getElementById('remux-help');
+    statusEl.textContent = 'Remux queued. You can stay here and watch status update...';
+
+    const jobId = data.job_id;
+    let done = false;
+    while (!done) {
+      await new Promise(r => setTimeout(r, 1200));
+      const stRes = await fetch(`/api/recordings/remux/status?job_id=${encodeURIComponent(jobId)}`);
+      const st = await stRes.json();
+
+      if (!stRes.ok) {
+        toast(`Remux status failed: ${st.detail || 'Unknown error'}`, 'error');
+        break;
+      }
+
+      if (st.status === 'queued') {
+        statusEl.textContent = 'Remux queued...';
+      } else if (st.status === 'running') {
+        statusEl.textContent = 'Remux running...';
+      } else if (st.status === 'completed') {
+        const result = st.result || {};
+        toast(`Remux complete: ${result.name || 'output.mp4'} (${fmtSize(result.size || 0)}). Original file deleted.`, 'success');
+        statusEl.textContent = `Saved to: ${result.path || data.output_path}`;
+        await loadClips();
+        closeEditor();
+        await loadRecordings();
+        done = true;
+      } else if (st.status === 'failed') {
+        toast(`Remux failed: ${st.error || 'Unknown error'}`, 'error');
+        statusEl.textContent = `Remux failed: ${st.error || 'Unknown error'}`;
+        done = true;
+      }
+    }
+  } catch (e) {
+    toast(`Remux failed: ${e.message}`, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Remux to MP4 (fast, no re-encode)';
+}
+
 // ── Clips Page ──────────────────────────────────────────────
 let allClips = [];
 async function loadClips() {
@@ -1420,6 +1493,7 @@ async function loadSettings() {
   const config = await res.json();
   document.getElementById('auto-refresh-check').checked = config.auto_refresh;
   document.getElementById('refresh-interval').value = config.refresh_interval;
+  document.getElementById('clips-path').value = config.clips_path || '/app/data/clips';
   renderSourcesList(config.sources);
 }
 
@@ -1475,12 +1549,14 @@ async function removeSource(label) {
 async function saveSettings() {
   const autoRefresh = document.getElementById('auto-refresh-check').checked;
   const interval = parseInt(document.getElementById('refresh-interval').value) || 20;
+  const clipsPath = document.getElementById('clips-path').value.trim() || '/app/data/clips';
   await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval }),
+    body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval, clips_path: clipsPath }),
   });
   toast('Settings saved', 'success');
+  await loadClips();
   setupAutoRefresh();
 }
 
