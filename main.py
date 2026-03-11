@@ -1,463 +1,380 @@
 import os
 import json
 import subprocess
-import shutil
-import uuid
+import time
 from pathlib import Path
-from typing import Optional
-
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from typing import Optional, List
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse, StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="WebClipper")
 
-DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
-CLIPS_DIR = DATA_DIR / "clips"
-CONFIG_FILE = DATA_DIR / "config.json"
-CLIPS_DIR.mkdir(parents=True, exist_ok=True)
+# ── Config ────────────────────────────────────────────────────
+CONFIG_DIR = "/app/data"
+CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
+CLIPS_DIR = os.path.join(CONFIG_DIR, "clips")
+
+DEFAULT_CONFIG = {
+    "sources": [],
+    "auto_refresh": True,
+    "refresh_interval": 20,
+}
+
+VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".ts", ".m4v"}
 
 
-# ── Config Persistence ──────────────────────────────────────────────
-
-def load_config() -> dict:
-    default = {
-        "sources": [],
-        "clips_dir": str(CLIPS_DIR),
-        "auto_refresh": True,
-        "refresh_interval": 20,
-    }
-    if CONFIG_FILE.exists():
-        try:
-            with open(CONFIG_FILE) as f:
-                saved = json.load(f)
-            default.update(saved)
-        except Exception:
-            pass
-    return default
+def load_config():
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            return json.load(f)
+    return DEFAULT_CONFIG.copy()
 
 
-def save_config(config: dict):
+def save_config(config):
+    os.makedirs(CONFIG_DIR, exist_ok=True)
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=2)
 
 
-# ── Models ──────────────────────────────────────────────────────────
-
+# ── Models ────────────────────────────────────────────────────
 class SourceModel(BaseModel):
     label: str
     path: str
 
 
+class SettingsModel(BaseModel):
+    auto_refresh: bool
+    refresh_interval: int
+
+
 class ClipRequest(BaseModel):
-    filepath: str  # full path relative to source root
+    filepath: str
     source_label: str
     start: float
     end: float
-    title: Optional[str] = None
-    game: Optional[str] = None
+    title: str
+    game: str = "Unknown"
     lossless: bool = True
-    audio_tracks: Optional[list[dict]] = None  # [{index, enabled, volume}]
+    audio_tracks: Optional[list] = None
 
 
-class SettingsUpdate(BaseModel):
-    auto_refresh: Optional[bool] = None
-    refresh_interval: Optional[int] = None
-
-
-# ── Helpers ─────────────────────────────────────────────────────────
-
-def probe_file(filepath: Path) -> dict:
-    cmd = [
-        "ffprobe", "-v", "quiet",
-        "-print_format", "json",
-        "-show_format", "-show_streams",
-        str(filepath)
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    if result.returncode != 0:
-        return {}
-    return json.loads(result.stdout)
-
-
-def get_video_info(filepath: Path) -> dict:
-    info = probe_file(filepath)
-    fmt = info.get("format", {})
-    streams = info.get("streams", [])
-
-    video_stream = next((s for s in streams if s.get("codec_type") == "video"), {})
-    audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
-
-    fps = None
-    if video_stream.get("r_frame_rate") and "/" in str(video_stream.get("r_frame_rate", "")):
-        try:
-            num, den = video_stream["r_frame_rate"].split("/")
-            fps = round(int(num) / int(den), 2) if int(den) != 0 else None
-        except (ValueError, ZeroDivisionError):
-            pass
-
-    audio_info = []
-    for i, a in enumerate(audio_streams):
-        audio_info.append({
-            "index": a.get("index"),
-            "codec": a.get("codec_name", ""),
-            "channels": a.get("channels", 0),
-            "sample_rate": a.get("sample_rate", ""),
-            "language": a.get("tags", {}).get("language", "und"),
-            "title": a.get("tags", {}).get("title", f"Track {i+1}"),
-        })
-
-    return {
-        "duration": float(fmt.get("duration", 0)),
-        "size": int(fmt.get("size", 0)),
-        "bit_rate": int(fmt.get("bit_rate", 0)) if fmt.get("bit_rate") else None,
-        "format_name": fmt.get("format_name", ""),
-        "video_codec": video_stream.get("codec_name", ""),
-        "width": video_stream.get("width"),
-        "height": video_stream.get("height"),
-        "fps": fps,
-        "audio_tracks": audio_info,
-    }
-
-
-def generate_thumbnail(filepath: Path, time: float = 1.0) -> Optional[Path]:
-    thumb_dir = DATA_DIR / "thumbnails"
-    thumb_dir.mkdir(exist_ok=True)
-    # Use a stable hash so we cache thumbnails
-    name_hash = str(abs(hash(str(filepath))))
-    thumb_path = thumb_dir / f"{name_hash}_{time:.0f}.jpg"
-    if thumb_path.exists():
-        return thumb_path
-    cmd = [
-        "ffmpeg", "-y", "-ss", str(time),
-        "-i", str(filepath),
-        "-vframes", "1", "-q:v", "5",
-        "-vf", "scale=400:-1",
-        str(thumb_path)
-    ]
-    result = subprocess.run(cmd, capture_output=True, timeout=15)
-    if thumb_path.exists():
-        return thumb_path
-    return None
-
-
-# ── Routes: Pages ───────────────────────────────────────────────────
-
+# ── Templates ─────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    with open("templates/index.html") as f:
+    template_path = os.path.join(os.path.dirname(__file__), "..", "templates", "index.html")
+    with open(template_path, "r") as f:
         return f.read()
 
 
-# ── Routes: Sources ─────────────────────────────────────────────────
-
+# ── Sources ───────────────────────────────────────────────────
 @app.get("/api/sources")
-async def list_sources():
+async def get_sources():
     config = load_config()
     sources = []
-    for src in config["sources"]:
-        p = Path(src["path"])
+    for s in config.get("sources", []):
         count = 0
-        if p.exists():
-            count = sum(1 for f in p.iterdir()
-                       if f.is_file() and f.suffix.lower() in
-                       (".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv", ".m4v", ".ts", ".mts"))
-        sources.append({**src, "count": count})
+        if os.path.isdir(s["path"]):
+            for root, dirs, files in os.walk(s["path"]):
+                count += sum(1 for f in files if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS)
+        sources.append({"label": s["label"], "path": s["path"], "count": count})
     return {"sources": sources}
 
 
 @app.post("/api/sources")
 async def add_source(source: SourceModel):
     config = load_config()
-    # Check if path exists
-    p = Path(source.path)
-    if not p.exists():
-        raise HTTPException(400, f"Path does not exist: {source.path}")
-    if not p.is_dir():
-        raise HTTPException(400, f"Path is not a directory: {source.path}")
-    # Check for duplicate labels
-    if any(s["label"] == source.label for s in config["sources"]):
-        raise HTTPException(400, f"Source with label '{source.label}' already exists")
-    config["sources"].append({"label": source.label, "path": source.path})
+    for s in config.get("sources", []):
+        if s["label"] == source.label:
+            raise HTTPException(400, f'Source "{source.label}" already exists')
+    if not os.path.isdir(source.path):
+        raise HTTPException(400, f"Directory not found: {source.path}")
+    config.setdefault("sources", []).append({"label": source.label, "path": source.path})
     save_config(config)
-    return {"status": "added"}
+    return {"status": "ok"}
 
 
 @app.delete("/api/sources/{label}")
 async def remove_source(label: str):
     config = load_config()
-    config["sources"] = [s for s in config["sources"] if s["label"] != label]
+    config["sources"] = [s for s in config.get("sources", []) if s["label"] != label]
     save_config(config)
-    return {"status": "removed"}
+    return {"status": "ok"}
 
 
-# ── Routes: Recordings ──────────────────────────────────────────────
-
+# ── Recordings ────────────────────────────────────────────────
 @app.get("/api/recordings")
-async def list_recordings(source: Optional[str] = None):
-    """List recordings, optionally filtered by source label."""
+async def get_recordings(source: Optional[str] = None):
     config = load_config()
     recordings = []
-    video_exts = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv", ".m4v", ".ts", ".mts")
-
-    sources_to_scan = config["sources"]
+    sources_to_scan = config.get("sources", [])
     if source:
-        sources_to_scan = [s for s in config["sources"] if s["label"] == source]
+        sources_to_scan = [s for s in sources_to_scan if s["label"] == source]
 
-    for src in sources_to_scan:
-        p = Path(src["path"])
-        if not p.exists():
+    for s in sources_to_scan:
+        if not os.path.isdir(s["path"]):
             continue
-        for f in sorted(p.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
-            if f.is_file() and f.suffix.lower() in video_exts:
-                stat = f.stat()
-                recordings.append({
-                    "name": f.name,
-                    "path": str(f),
-                    "source": src["label"],
-                    "size": stat.st_size,
-                    "modified": stat.st_mtime,
-                })
+        for root, dirs, files in os.walk(s["path"]):
+            for f in files:
+                if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS:
+                    filepath = os.path.join(root, f)
+                    stat = os.stat(filepath)
+                    recordings.append({
+                        "name": f,
+                        "path": filepath,
+                        "source": s["label"],
+                        "size": stat.st_size,
+                        "modified": stat.st_mtime,
+                    })
+
+    recordings.sort(key=lambda r: r["modified"], reverse=True)
     return {"recordings": recordings}
 
 
-@app.get("/api/recordings/info")
-async def recording_info(path: str):
-    filepath = Path(path)
-    if not filepath.exists():
-        raise HTTPException(404, "File not found")
-    info = get_video_info(filepath)
-    info["name"] = filepath.name
-    info["path"] = str(filepath)
-    return info
-
-
 @app.get("/api/recordings/thumbnail")
-async def recording_thumbnail(path: str, time: float = 1.0):
-    filepath = Path(path)
-    if not filepath.exists():
+async def get_thumbnail(path: str, time: float = 1):
+    if not os.path.isfile(path):
         raise HTTPException(404, "File not found")
-    thumb = generate_thumbnail(filepath, time)
-    if thumb:
-        return FileResponse(thumb, media_type="image/jpeg")
-    raise HTTPException(500, "Failed to generate thumbnail")
+
+    thumb_dir = os.path.join(CONFIG_DIR, "thumbnails")
+    os.makedirs(thumb_dir, exist_ok=True)
+
+    # Use a hash of the path for the thumbnail filename
+    import hashlib
+    path_hash = hashlib.md5(path.encode()).hexdigest()
+    thumb_path = os.path.join(thumb_dir, f"{path_hash}.jpg")
+
+    if not os.path.exists(thumb_path):
+        try:
+            subprocess.run([
+                "ffmpeg", "-y", "-ss", str(time), "-i", path,
+                "-vframes", "1", "-q:v", "8",
+                "-vf", "scale=480:-1",
+                thumb_path
+            ], capture_output=True, timeout=15)
+        except Exception:
+            raise HTTPException(500, "Failed to generate thumbnail")
+
+    if not os.path.exists(thumb_path):
+        raise HTTPException(500, "Thumbnail generation failed")
+
+    return FileResponse(thumb_path, media_type="image/jpeg")
 
 
+@app.get("/api/recordings/info")
+async def get_recording_info(path: str):
+    if not os.path.isfile(path):
+        raise HTTPException(404, "File not found")
+
+    audio_tracks = []
+    try:
+        result = subprocess.run([
+            "ffprobe", "-v", "quiet", "-print_format", "json",
+            "-show_streams", path
+        ], capture_output=True, text=True, timeout=10)
+        probe = json.loads(result.stdout)
+        for stream in probe.get("streams", []):
+            if stream.get("codec_type") == "audio":
+                audio_tracks.append({
+                    "index": stream.get("index", 0),
+                    "language": stream.get("tags", {}).get("language", "und"),
+                    "codec": stream.get("codec_name", "unknown"),
+                    "channels": stream.get("channels", 2),
+                })
+    except Exception:
+        pass
+
+    return {"audio_tracks": audio_tracks, "path": path}
+
+
+# ── Streaming ─────────────────────────────────────────────────
 @app.get("/stream")
 async def stream_video(path: str):
-    filepath = Path(path)
-    if not filepath.exists():
+    if not os.path.isfile(path):
         raise HTTPException(404, "File not found")
-    return FileResponse(filepath)
-
-
-# ── Routes: Clipping ───────────────────────────────────────────────
-
-@app.post("/api/clip")
-async def create_clip(req: ClipRequest):
-    source = Path(req.filepath)
-    if not source.exists():
-        raise HTTPException(404, "Source video not found")
-
-    if req.end <= req.start:
-        raise HTTPException(400, "End time must be after start time")
-
-    config = load_config()
-    clips_dir = Path(config.get("clips_dir", str(CLIPS_DIR)))
-    clips_dir.mkdir(parents=True, exist_ok=True)
-
-    duration = req.end - req.start
-    ext = source.suffix
-
-    title = req.title or source.stem
-    out_name = f"{title}{ext}"
-    # Avoid overwriting
-    counter = 1
-    while (clips_dir / out_name).exists():
-        out_name = f"{title}_{counter}{ext}"
-        counter += 1
-
-    output = clips_dir / out_name
-
-    if req.lossless:
-        cmd = [
-            "ffmpeg", "-y",
-            "-ss", str(req.start),
-            "-i", str(source),
-            "-t", str(duration),
-            "-c", "copy",
-            "-avoid_negative_ts", "make_zero",
-            "-map", "0",
-            str(output)
-        ]
-    else:
-        # Build audio filter for track mixing
-        cmd = [
-            "ffmpeg", "-y",
-            "-ss", str(req.start),
-            "-i", str(source),
-            "-t", str(duration),
-        ]
-
-        if req.audio_tracks:
-            # Handle audio track selection and volume
-            audio_maps = []
-            filter_parts = []
-            enabled_tracks = [t for t in req.audio_tracks if t.get("enabled", True)]
-
-            if len(enabled_tracks) == 0:
-                cmd.extend(["-an"])
-            elif len(enabled_tracks) == 1:
-                t = enabled_tracks[0]
-                vol = t.get("volume", 100) / 100.0
-                cmd.extend(["-map", "0:v:0", "-map", f"0:a:{t['index']}"])
-                if vol != 1.0:
-                    cmd.extend(["-af", f"volume={vol}"])
-            else:
-                # Mix multiple audio tracks
-                filter_str = ""
-                for i, t in enumerate(enabled_tracks):
-                    vol = t.get("volume", 100) / 100.0
-                    filter_str += f"[0:a:{t['index']}]volume={vol}[a{i}];"
-                inputs = "".join(f"[a{i}]" for i in range(len(enabled_tracks)))
-                filter_str += f"{inputs}amix=inputs={len(enabled_tracks)}:duration=first[aout]"
-                cmd.extend([
-                    "-map", "0:v:0",
-                    "-filter_complex", filter_str,
-                    "-map", "[aout]",
-                ])
-
-            cmd.extend([
-                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                "-c:a", "aac", "-b:a", "192k",
-            ])
-        else:
-            cmd.extend([
-                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                "-c:a", "aac", "-b:a", "192k",
-            ])
-
-        cmd.extend(["-avoid_negative_ts", "make_zero", str(output)])
-
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-
-    if result.returncode != 0:
-        raise HTTPException(500, f"FFmpeg error: {result.stderr[-500:]}")
-
-    # Save clip metadata
-    meta = {
-        "title": title,
-        "source": req.source_label,
-        "source_file": req.filepath,
-        "game": req.game or "Unknown",
-        "start": req.start,
-        "end": req.end,
-        "lossless": req.lossless,
-    }
-    meta_file = clips_dir / f"{out_name}.json"
-    with open(meta_file, "w") as f:
-        json.dump(meta, f, indent=2)
-
-    return {
-        "name": out_name,
-        "size": output.stat().st_size,
-        "duration": duration,
-        "lossless": req.lossless,
-    }
-
-
-# ── Routes: Clips Management ──────────────────────────────────────
-
-@app.get("/api/clips")
-async def list_clips():
-    config = load_config()
-    clips_dir = Path(config.get("clips_dir", str(CLIPS_DIR)))
-    clips = []
-    video_exts = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv", ".m4v")
-
-    if clips_dir.exists():
-        for f in sorted(clips_dir.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
-            if f.is_file() and f.suffix.lower() in video_exts:
-                stat = f.stat()
-                clip = {
-                    "name": f.name,
-                    "path": str(f),
-                    "size": stat.st_size,
-                    "modified": stat.st_mtime,
-                }
-                # Load metadata if exists
-                meta_file = clips_dir / f"{f.name}.json"
-                if meta_file.exists():
-                    try:
-                        with open(meta_file) as mf:
-                            clip["meta"] = json.load(mf)
-                    except Exception:
-                        pass
-                clips.append(clip)
-    return {"clips": clips}
-
-
-@app.get("/api/clips/download")
-async def download_clip(path: str):
-    filepath = Path(path)
-    if not filepath.exists():
-        raise HTTPException(404, "Clip not found")
-    return FileResponse(filepath, filename=filepath.name)
+    return FileResponse(path, media_type="video/mp4")
 
 
 @app.get("/stream/clip")
 async def stream_clip(path: str):
-    filepath = Path(path)
-    if not filepath.exists():
-        raise HTTPException(404, "Clip not found")
-    return FileResponse(filepath)
+    if not os.path.isfile(path):
+        raise HTTPException(404, "File not found")
+    return FileResponse(path, media_type="video/mp4")
+
+
+# ── Clips ─────────────────────────────────────────────────────
+@app.post("/api/clip")
+async def create_clip(req: ClipRequest):
+    if not os.path.isfile(req.filepath):
+        raise HTTPException(404, "Source file not found")
+
+    os.makedirs(CLIPS_DIR, exist_ok=True)
+
+    # Sanitize title for filename
+    safe_title = "".join(c for c in req.title if c.isalnum() or c in " -_").strip()
+    if not safe_title:
+        safe_title = "clip"
+    timestamp = int(time.time())
+    out_filename = f"{safe_title}_{timestamp}.mp4"
+    out_path = os.path.join(CLIPS_DIR, out_filename)
+
+    duration = req.end - req.start
+
+    if req.lossless:
+        # Stream copy (fast, no re-encode)
+        cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(req.start),
+            "-i", req.filepath,
+            "-t", str(duration),
+            "-c", "copy",
+            "-avoid_negative_ts", "make_zero",
+            out_path
+        ]
+    else:
+        # Re-encode with optional audio mixing
+        cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(req.start),
+            "-i", req.filepath,
+            "-t", str(duration),
+        ]
+
+        if req.audio_tracks:
+            enabled = [t for t in req.audio_tracks if t.get("enabled", True)]
+            if len(enabled) > 1:
+                # Build amix filter for multiple tracks
+                filter_parts = []
+                for t in enabled:
+                    vol = t.get("volume", 100) / 100.0
+                    idx = t["index"]
+                    filter_parts.append(f"[0:{idx}]volume={vol}[a{idx}]")
+                mix_inputs = "".join(f"[a{t['index']}]" for t in enabled)
+                filter_parts.append(f"{mix_inputs}amix=inputs={len(enabled)}:duration=first[aout]")
+                cmd += ["-filter_complex", ";".join(filter_parts), "-map", "0:v", "-map", "[aout]"]
+            elif len(enabled) == 1:
+                vol = enabled[0].get("volume", 100) / 100.0
+                idx = enabled[0]["index"]
+                cmd += ["-map", "0:v", "-map", f"0:{idx}"]
+                if vol != 1.0:
+                    cmd += ["-af", f"volume={vol}"]
+            else:
+                cmd += ["-an"]  # No audio
+        else:
+            pass  # Default: include all streams
+
+        cmd += ["-c:v", "libx264", "-preset", "fast", "-crf", "22", "-c:a", "aac", "-b:a", "192k"]
+        cmd.append(out_path)
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if result.returncode != 0:
+            raise HTTPException(500, f"FFmpeg error: {result.stderr[-500:]}")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(500, "Clip creation timed out")
+
+    if not os.path.exists(out_path):
+        raise HTTPException(500, "Output file was not created")
+
+    # Save clip metadata
+    meta = {
+        "title": req.title,
+        "game": req.game,
+        "source": req.source_label,
+        "start": req.start,
+        "end": req.end,
+        "lossless": req.lossless,
+        "created": timestamp,
+    }
+    meta_path = out_path + ".json"
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
+
+    stat = os.stat(out_path)
+    return {"name": out_filename, "path": out_path, "size": stat.st_size}
+
+
+@app.get("/api/clips")
+async def get_clips():
+    os.makedirs(CLIPS_DIR, exist_ok=True)
+    clips = []
+    for f in os.listdir(CLIPS_DIR):
+        if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS:
+            filepath = os.path.join(CLIPS_DIR, f)
+            stat = os.stat(filepath)
+
+            # Load metadata if exists
+            meta = None
+            meta_path = filepath + ".json"
+            if os.path.exists(meta_path):
+                try:
+                    with open(meta_path, "r") as mf:
+                        meta = json.load(mf)
+                except Exception:
+                    pass
+
+            clips.append({
+                "name": f,
+                "path": filepath,
+                "size": stat.st_size,
+                "modified": stat.st_mtime,
+                "meta": meta,
+            })
+
+    clips.sort(key=lambda c: c["modified"], reverse=True)
+    return {"clips": clips}
 
 
 @app.delete("/api/clips")
 async def delete_clip(path: str):
-    filepath = Path(path)
-    if not filepath.exists():
+    if not os.path.isfile(path):
         raise HTTPException(404, "Clip not found")
-    filepath.unlink()
+    if not path.startswith(CLIPS_DIR):
+        raise HTTPException(403, "Cannot delete files outside clips directory")
+    os.remove(path)
     # Remove metadata too
-    meta_file = Path(f"{filepath}.json")
-    if meta_file.exists():
-        meta_file.unlink()
-    return {"status": "deleted"}
+    meta_path = path + ".json"
+    if os.path.exists(meta_path):
+        os.remove(meta_path)
+    return {"status": "ok"}
 
 
-# ── Routes: Settings ───────────────────────────────────────────────
+@app.get("/api/clips/download")
+async def download_clip(path: str):
+    if not os.path.isfile(path):
+        raise HTTPException(404, "Clip not found")
+    filename = os.path.basename(path)
+    return FileResponse(path, filename=filename, media_type="application/octet-stream")
 
+
+# ── Settings ──────────────────────────────────────────────────
 @app.get("/api/settings")
 async def get_settings():
     return load_config()
 
 
 @app.put("/api/settings")
-async def update_settings(settings: SettingsUpdate):
+async def update_settings(settings: SettingsModel):
     config = load_config()
-    if settings.auto_refresh is not None:
-        config["auto_refresh"] = settings.auto_refresh
-    if settings.refresh_interval is not None:
-        config["refresh_interval"] = settings.refresh_interval
+    config["auto_refresh"] = settings.auto_refresh
+    config["refresh_interval"] = settings.refresh_interval
     save_config(config)
-    return config
+    return {"status": "ok"}
 
 
-# ── Routes: Browse filesystem (for settings) ──────────────────────
-
+# ── Folder Browser ────────────────────────────────────────────
 @app.get("/api/browse")
 async def browse_directory(path: str = "/"):
-    """Browse directories on the server for setting up sources."""
-    p = Path(path)
-    if not p.exists() or not p.is_dir():
-        raise HTTPException(400, "Invalid directory")
+    target = path if path else "/"
+    if not os.path.isdir(target):
+        raise HTTPException(404, "Directory not found")
     dirs = []
-    for item in sorted(p.iterdir()):
-        if item.is_dir() and not item.name.startswith('.'):
-            dirs.append({
-                "name": item.name,
-                "path": str(item),
-            })
-    return {"current": str(p), "directories": dirs}
+    try:
+        for entry in sorted(os.scandir(target), key=lambda e: e.name.lower()):
+            if entry.is_dir() and not entry.name.startswith('.'):
+                dirs.append({"name": entry.name, "path": entry.path})
+    except PermissionError:
+        raise HTTPException(403, "Permission denied")
+    return {"path": target, "parent": os.path.dirname(target), "directories": dirs}
