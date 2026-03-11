@@ -1,0 +1,17 @@
+services:
+  webclipper:
+    build: .
+    container_name: webclipper
+    ports:
+      - "8080:8080"
+    volumes:
+      # Map your NAS recordings folders here.
+      # Left side = path on your NAS, Right side = path inside the container
+      # Example: if your recordings are at /share/recordings on the NAS:
+      - /share/recordings:/mnt/recordings
+      # Persistent data (config, clips, thumbnails)
+      - webclipper_data:/data
+    restart: unless-stopped
+
+volumes:
+  webclipper_data:
