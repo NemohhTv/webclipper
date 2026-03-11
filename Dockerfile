@@ -1,22 +1,21 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV WEBCLIPPER_DATA_DIR=/data
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY . .
 
-COPY app /app/app
-COPY templates /app/templates
-
-RUN mkdir -p /data /data/clips /data/thumbnails /data/preview
+RUN mkdir -p /data/clips /data/thumbnails /data/preview
 
 EXPOSE 9069
 
