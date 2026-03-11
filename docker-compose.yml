@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   webclipper:
     build: .
@@ -8,7 +10,7 @@ services:
       WEBCLIPPER_DATA_DIR: /data
     volumes:
       - webclipper_data:/data
-      - /volume1/Recordings:/mnt/Recordings
+      - /volume1/Recordings:/mnt/recordings
     restart: unless-stopped
 
 volumes:
