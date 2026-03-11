@@ -1084,10 +1084,24 @@ function fmtSize(bytes) {
   return (bytes / 1073741824).toFixed(1) + ' GB';
 }
 
+async function parseApiResponse(res) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text };
+  }
+}
+
 // ── Sources ─────────────────────────────────────────────────
 async function loadSources() {
   const res = await fetch('/api/sources');
-  const data = await res.json();
+  const data = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(data.detail || `Failed to load sources (${res.status})`, 'error');
+    return;
+  }
   sources = data.sources;
 
   const nav = document.getElementById('source-nav');
@@ -1121,7 +1135,11 @@ async function loadRecordings() {
   const source = document.getElementById('source-filter').value;
   const url = source ? `/api/recordings?source=${encodeURIComponent(source)}` : '/api/recordings';
   const res = await fetch(url);
-  const data = await res.json();
+  const data = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(data.detail || `Failed to load recordings (${res.status})`, 'error');
+    return;
+  }
   allRecordings = data.recordings;
   renderRecordings(allRecordings);
   loadSources();
@@ -1228,6 +1246,13 @@ async function openEditor(rec) {
   const transcode = info.needs_transcode_preview ? '&transcode=1' : '';
   video.src = `/stream?path=${encodeURIComponent(rec.path)}${transcode}`;
   video.load();
+
+  const remuxHelp = document.getElementById('remux-help');
+  if (info.extension === '.mkv' || info.needs_transcode_preview) {
+    remuxHelp.textContent = 'This format may not preview reliably in Firefox. Remux creates an MP4 in this same folder and removes the source after success.';
+  } else {
+    remuxHelp.textContent = 'Remux creates an MP4 in this same folder quickly without re-encoding (if codecs are MP4-compatible).';
+  }
 
   video.onloadedmetadata = () => {
     editorDuration = video.duration;
@@ -1415,6 +1440,61 @@ async function createClip() {
   btn.textContent = 'Create Clip';
 }
 
+async function remuxCurrentRecording() {
+  if (!editorFile) return;
+  const btn = document.getElementById('remux-btn');
+  btn.disabled = true;
+  btn.textContent = 'Remuxing...';
+
+  try {
+    const res = await fetch(`/api/recordings/remux?path=${encodeURIComponent(editorFile.path)}`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(`Remux failed: ${data.detail || 'Unknown error'}`, 'error');
+      return;
+    }
+
+    const statusEl = document.getElementById('remux-help');
+    statusEl.textContent = 'Remux queued. You can stay here and watch status update...';
+
+    const jobId = data.job_id;
+    let done = false;
+    while (!done) {
+      await new Promise(r => setTimeout(r, 1200));
+      const stRes = await fetch(`/api/recordings/remux/status?job_id=${encodeURIComponent(jobId)}`);
+      const st = await stRes.json();
+
+      if (!stRes.ok) {
+        toast(`Remux status failed: ${st.detail || 'Unknown error'}`, 'error');
+        break;
+      }
+
+      if (st.status === 'queued') {
+        statusEl.textContent = 'Remux queued...';
+      } else if (st.status === 'running') {
+        statusEl.textContent = 'Remux running...';
+      } else if (st.status === 'completed') {
+        const result = st.result || {};
+        toast(`Remux complete: ${result.name || 'output.mp4'} (${fmtSize(result.size || 0)}). Original file deleted.`, 'success');
+        statusEl.textContent = `Saved to: ${result.path || data.output_path}`;
+        await loadClips();
+        closeEditor();
+        await loadRecordings();
+        done = true;
+      } else if (st.status === 'failed') {
+        toast(`Remux failed: ${st.error || 'Unknown error'}`, 'error');
+        statusEl.textContent = `Remux failed: ${st.error || 'Unknown error'}`;
+        done = true;
+      }
+    }
+  } catch (e) {
+    toast(`Remux failed: ${e.message}`, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Remux to MP4 (fast, no re-encode)';
+}
+
 // ── Clips Page ──────────────────────────────────────────────
 let allClips = [];
 async function loadClips() {
@@ -1470,7 +1550,11 @@ async function deleteClip(path) {
 // ── Settings ────────────────────────────────────────────────
 async function loadSettings() {
   const res = await fetch('/api/settings');
-  const config = await res.json();
+  const config = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(config.detail || `Failed to load settings (${res.status})`, 'error');
+    return;
+  }
   document.getElementById('auto-refresh-check').checked = config.auto_refresh;
   document.getElementById('refresh-interval').value = config.refresh_interval;
   document.getElementById('clips-path').value = config.clips_path || '/app/data/clips';
@@ -1505,6 +1589,7 @@ async function addSource() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ label, path }),
     });
+    const data = await parseApiResponse(res);
     if (res.ok) {
       toast(`Source "${label}" added`, 'success');
       document.getElementById('new-source-label').value = '';
@@ -1512,7 +1597,6 @@ async function addSource() {
       loadSettings();
       loadSources();
     } else {
-      const data = await res.json();
       toast(data.detail, 'error');
     }
   } catch (e) { toast(e.message, 'error'); }
@@ -1529,12 +1613,16 @@ async function removeSource(label) {
 async function saveSettings() {
   const autoRefresh = document.getElementById('auto-refresh-check').checked;
   const interval = parseInt(document.getElementById('refresh-interval').value) || 20;
-  const clipsPath = document.getElementById('clips-path').value.trim() || '/app/data/clips';
   await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval, clips_path: clipsPath }),
   });
+  const data = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(data.detail || `Failed to save settings (${res.status})`, 'error');
+    return;
+  }
   toast('Settings saved', 'success');
   await loadClips();
   setupAutoRefresh();
