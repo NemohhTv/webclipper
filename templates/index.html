@@ -1,1765 +1,924 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebClipper</title>
-<style>
-:root {
-  --bg-primary: #0c1929;
-  --bg-secondary: #112240;
-  --bg-card: #132844;
-  --bg-input: #0a1628;
-  --accent: #1e90ff;
-  --accent-hover: #3ba0ff;
-  --accent-dim: rgba(30,144,255,0.15);
-  --red: #e74c3c;
-  --green: #2ecc71;
-  --text: #e0e6ed;
-  --text-dim: #7a8ba3;
-  --border: #1e3a5f;
-  --sidebar-w: 200px;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text);
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
-}
+  <meta charset="utf-8" />
+  <title>WebClipper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111a2b;
+      --panel-2: #162238;
+      --muted: #8ea1c0;
+      --text: #e8eefc;
+      --accent: #4ea1ff;
+      --danger: #ff5d73;
+      --border: #22314f;
+    }
 
-/* ── Sidebar ─────────────────────────────────────────────── */
-.sidebar {
-  width: var(--sidebar-w);
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-.sidebar-logo {
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border);
-}
-.sidebar-logo .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--green);
-}
-.sidebar-nav {
-  flex: 1;
-  padding: 8px 0;
-  overflow-y: auto;
-}
-.nav-section {
-  padding: 0 8px;
-  margin-bottom: 4px;
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text);
-  transition: background .1s;
-}
-.nav-item:hover { background: var(--accent-dim); }
-.nav-item.active { background: var(--accent-dim); color: var(--accent); }
-.nav-item .count {
-  background: var(--bg-primary);
-  padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 11px;
-  color: var(--text-dim);
-}
-.nav-item.active .count { color: var(--accent); }
-.nav-sub { padding-left: 20px; }
-.nav-sub .nav-item { font-size: 12px; padding: 5px 12px; }
-.nav-divider { height: 1px; background: var(--border); margin: 8px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-/* ── Main Content ────────────────────────────────────────── */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: 100vh;
+    }
 
-/* ── Top Bar ──────────────────────────────────────────────── */
-.topbar {
-  display: flex;
-  align-items: center;
-  padding: 12px 20px;
-  gap: 16px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.topbar h1 { font-size: 18px; font-weight: 600; }
-.topbar .spacer { flex: 1; }
-.topbar select {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.topbar input[type="text"] {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  width: 200px;
-}
-.topbar input::placeholder { color: var(--text-dim); }
-.topbar-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all .1s;
-}
-.topbar-btn:hover { border-color: var(--accent); color: var(--accent); }
-.topbar-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: #0a101c;
+      padding: 20px;
+    }
 
-/* ── Pages ────────────────────────────────────────────────── */
-.page { display: none; flex: 1; overflow: hidden; }
-.page.active { display: flex; flex-direction: column; }
+    .main {
+      padding: 20px;
+    }
 
-/* ── Recordings Grid ──────────────────────────────────────── */
-.recordings-grid {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  align-content: start;
-}
-.rec-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: border-color .15s, transform .1s;
-  position: relative;
-}
-.rec-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-.rec-card .thumb {
-  width: 100%;
-  aspect-ratio: 16/9;
-  background: #000;
-  object-fit: cover;
-  display: block;
-}
-.rec-card .thumb-placeholder {
-  width: 100%;
-  aspect-ratio: 16/9;
-  background: #0a1220;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-dim);
-  font-size: 36px;
-}
-.rec-card .card-info { padding: 10px 12px; }
-.rec-card .card-name {
-  font-size: 13px;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.rec-card .card-name .src-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-.rec-card .card-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-top: 4px;
-}
-.rec-card .card-select {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 20px;
-  height: 20px;
-  background: rgba(0,0,0,0.6);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  cursor: pointer;
-}
-.rec-card .card-dl {
-  position: absolute;
-  bottom: 50px;
-  right: 8px;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 16px;
-}
-.rec-card .card-dl:hover { color: var(--accent); }
+    h1, h2, h3 {
+      margin: 0 0 14px;
+    }
 
-/* ── Video Editor (overlay) ──────────────────────────────── */
-.editor-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: var(--bg-primary);
-  z-index: 100;
-  flex-direction: column;
-}
-.editor-overlay.visible { display: flex; }
-.editor-top {
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.editor-top .file-name { font-size: 14px; font-weight: 600; }
-.editor-top .file-path { font-size: 11px; color: var(--text-dim); }
-.editor-top .close-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-}
-.editor-top .close-btn:hover { border-color: var(--accent); }
-.editor-body {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-.editor-video-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.editor-video-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  min-height: 0;
-}
-.editor-video-container video {
-  max-width: 100%;
-  max-height: 100%;
-  outline: none;
-}
+    .brand {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
 
-/* ── Player Controls ──────────────────────────────────────── */
-.player-controls {
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
-}
-.play-btn {
-  width: 32px;
-  height: 32px;
-  background: none;
-  border: none;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.scrubber {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-}
-.scrubber::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-}
-.scrubber::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-  border: none;
-}
-.player-time {
-  font-size: 12px;
-  font-family: 'Courier New', monospace;
-  color: var(--text-dim);
-  min-width: 90px;
-  text-align: right;
-}
-.vol-btn, .fs-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 16px;
-}
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
 
-/* ── Timeline (trim) ─────────────────────────────────────── */
-.trim-area {
-  padding: 8px 16px 12px;
-  background: var(--bg-secondary);
-}
-.trim-info {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-bottom: 6px;
-}
-.trim-track {
-  position: relative;
-  height: 40px;
-  background: var(--accent-dim);
-  border-radius: 6px;
-  overflow: visible;
-}
-.trim-selected {
-  position: absolute;
-  height: 100%;
-  background: var(--accent);
-  opacity: 0.4;
-  border-radius: 4px;
-}
-.trim-handle {
-  position: absolute;
-  top: 0;
-  width: 6px;
-  height: 100%;
-  background: var(--accent);
-  cursor: ew-resize;
-  z-index: 5;
-  border-radius: 3px;
-}
-.trim-handle::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 2px;
-  height: 16px;
-  background: #fff;
-  border-radius: 1px;
-}
-.trim-playhead {
-  position: absolute;
-  top: -4px;
-  width: 2px;
-  height: calc(100% + 8px);
-  background: #fff;
-  z-index: 10;
-  pointer-events: none;
-}
-.trim-buttons {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-  align-items: center;
-}
-.trim-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 4px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all .1s;
-}
-.trim-btn:hover { border-color: var(--accent); color: var(--accent); }
-.trim-btn.accent { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
-/* ── Clip Output Panel ────────────────────────────────────── */
-.clip-panel {
-  width: 300px;
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border);
-  padding: 16px;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-.clip-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-.clip-panel .subtitle { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
-.clip-panel label {
-  display: block;
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-bottom: 4px;
-  margin-top: 12px;
-}
-.clip-panel input[type="text"],
-.clip-panel input[type="number"] {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.clip-panel .time-inputs { display: flex; gap: 8px; }
-.clip-panel .time-inputs .time-group { flex: 1; }
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
 
-/* ── Audio Tracks ─────────────────────────────────────────── */
-.audio-tracks { margin-top: 16px; }
-.audio-tracks h4 { font-size: 13px; margin-bottom: 8px; }
-.audio-track-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 12px;
-}
-.audio-track-item input[type="checkbox"] { accent-color: var(--accent); }
-.audio-track-item input[type="range"] { flex: 1; accent-color: var(--accent); height: 4px; }
-.audio-track-item .vol-label { min-width: 35px; text-align: right; color: var(--text-dim); }
+    input, select, button {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+    }
 
-.create-clip-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--green);
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  margin-top: 20px;
-  transition: opacity .15s;
-}
-.create-clip-btn:hover { opacity: .9; }
-.create-clip-btn:disabled { opacity: .5; cursor: default; }
+    input, select {
+      width: 100%;
+    }
 
-/* ── Clips Page ───────────────────────────────────────────── */
-.clips-grid {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  align-content: start;
-}
-.clip-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  transition: border-color .15s;
-}
-.clip-card:hover { border-color: var(--accent); }
-.clip-card video {
-  width: 100%;
-  aspect-ratio: 16/9;
-  object-fit: cover;
-  background: #000;
-}
-.clip-card .clip-info { padding: 10px 12px; }
-.clip-card .clip-name {
-  font-size: 13px;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.clip-card .clip-meta {
-  font-size: 11px;
-  color: var(--text-dim);
-  display: flex;
-  justify-content: space-between;
-  margin-top: 2px;
-}
-.clip-card .clip-actions { padding: 6px 12px 10px; display: flex; gap: 6px; }
-.clip-card .clip-btn {
-  flex: 1;
-  padding: 5px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 12px;
-  text-decoration: none;
-  text-align: center;
-  transition: all .1s;
-}
-.clip-card .clip-btn:hover { border-color: var(--accent); color: var(--accent); }
-.clip-card .clip-btn.danger:hover { border-color: var(--red); color: var(--red); }
+    button {
+      cursor: pointer;
+      background: #1a2a46;
+    }
 
-/* ── Settings Page ────────────────────────────────────────── */
-.settings-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-.settings-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-  min-width: 360px;
-  max-width: 500px;
-  flex: 1;
-}
-.settings-card h3 { font-size: 15px; margin-bottom: 4px; }
-.settings-card .desc { font-size: 12px; color: var(--text-dim); margin-bottom: 16px; }
-.settings-card label {
-  display: block;
-  font-size: 13px;
-  margin-bottom: 4px;
-  margin-top: 10px;
-}
-.settings-card input[type="text"],
-.settings-card input[type="number"] {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.settings-card .add-btn {
-  background: var(--accent);
-  border: none;
-  color: #fff;
-  padding: 6px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 10px;
-}
-.settings-card .add-btn:hover { opacity: .9; }
-.settings-card .save-btn {
-  background: var(--accent);
-  border: none;
-  color: #fff;
-  padding: 8px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 12px;
-}
-.source-list { margin-top: 12px; }
-.source-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  margin-bottom: 6px;
-}
-.source-item .source-info .source-label { font-size: 13px; font-weight: 500; }
-.source-item .source-info .source-path { font-size: 11px; color: var(--text-dim); }
-.source-item .remove-btn {
-  background: var(--red);
-  border: none;
-  color: #fff;
-  padding: 5px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-.source-item .remove-btn:hover { opacity: .8; }
-.settings-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-.settings-check input { accent-color: var(--accent); }
+    button:hover {
+      border-color: var(--accent);
+    }
 
-/* ── Folder Browser Modal ─────────────────────────────────── */
-.folder-modal-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-}
-.folder-modal-backdrop.visible { display: flex; }
-.folder-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  width: 520px;
-  max-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-}
-.folder-modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.folder-modal-header h3 { font-size: 15px; font-weight: 600; }
-.folder-modal-close {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-.folder-modal-close:hover { color: var(--text); background: var(--accent-dim); }
-.folder-breadcrumb {
-  padding: 10px 20px;
-  background: var(--bg-input);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  flex-wrap: wrap;
-  min-height: 40px;
-}
-.folder-breadcrumb .crumb {
-  color: var(--accent);
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
-}
-.folder-breadcrumb .crumb:hover { background: var(--accent-dim); }
-.folder-breadcrumb .crumb.current { color: var(--text); cursor: default; }
-.folder-breadcrumb .crumb.current:hover { background: none; }
-.folder-breadcrumb .sep { color: var(--text-dim); }
-.folder-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-  min-height: 200px;
-}
-.folder-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background .1s;
-}
-.folder-item:hover { background: var(--accent-dim); }
-.folder-item .folder-icon { font-size: 18px; flex-shrink: 0; }
-.folder-item .folder-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.folder-empty {
-  padding: 30px;
-  text-align: center;
-  color: var(--text-dim);
-  font-size: 13px;
-}
-.folder-loading {
-  padding: 30px;
-  text-align: center;
-  color: var(--text-dim);
-  font-size: 13px;
-}
-.folder-modal-footer {
-  padding: 12px 20px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.folder-modal-footer .selected-path {
-  flex: 1;
-  font-size: 12px;
-  color: var(--text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.folder-modal-footer .folder-cancel-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-}
-.folder-modal-footer .folder-cancel-btn:hover { border-color: var(--accent); }
-.folder-modal-footer .folder-select-btn {
-  background: var(--accent);
-  border: none;
-  color: #fff;
-  padding: 8px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-}
-.folder-modal-footer .folder-select-btn:hover { opacity: .9; }
+    button.primary {
+      background: var(--accent);
+      color: #06111f;
+      font-weight: 700;
+      border-color: transparent;
+    }
 
-/* ── Collections Page ─────────────────────────────────────── */
-.empty-msg {
-  color: var(--text-dim);
-  padding: 40px;
-  text-align: center;
-  font-size: 14px;
-}
+    button.danger {
+      background: rgba(255, 93, 115, 0.12);
+      color: #ffb6c0;
+      border-color: rgba(255, 93, 115, 0.35);
+    }
 
-/* ── Toast ────────────────────────────────────────────────── */
-.toast-container {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.toast {
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: 13px;
-  animation: toastIn .2s ease;
-  max-width: 360px;
-}
-.toast.success { background: var(--green); color: #fff; }
-.toast.error { background: var(--red); color: #fff; }
-.toast.info { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
-@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
-</style>
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      padding: 10px 14px;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #06111f;
+      font-weight: 700;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .recording, .source-item, .clip-item {
+      display: grid;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .recording {
+      grid-template-columns: 26px 160px 1fr auto;
+      align-items: center;
+    }
+
+    .clip-item {
+      grid-template-columns: 26px 1fr auto;
+      align-items: center;
+    }
+
+    .thumb {
+      width: 160px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #000;
+    }
+
+    .title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .video-wrap {
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    video {
+      width: 100%;
+      max-height: 560px;
+      background: #000;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .status {
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      display: none;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      border-color: rgba(255, 93, 115, 0.35);
+      color: #ffd1d7;
+      background: rgba(255, 93, 115, 0.08);
+    }
+
+    .status.success {
+      border-color: rgba(78, 161, 255, 0.35);
+      color: #dcecff;
+      background: rgba(78, 161, 255, 0.08);
+    }
+
+    .source-path {
+      word-break: break-all;
+    }
+
+    .browser-list {
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      background: #0d1627;
+    }
+
+    .browser-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .browser-item:hover {
+      background: #13203a;
+    }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
+      .recording { grid-template-columns: 26px 120px 1fr; }
+      .actions { grid-column: 1 / -1; justify-content: flex-start; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">WebClipper</div>
 
-<!-- Sidebar -->
-<div class="sidebar">
-  <div class="sidebar-logo">
-    <div class="dot"></div>
-    WEB CLIPPER
-  </div>
-  <div class="sidebar-nav">
-    <div class="nav-section">
-      <div class="nav-item active" data-page="recordings" onclick="navigateTo('recordings')">
-        Recordings <span class="count" id="total-count">0</span>
+      <div class="panel">
+        <h3>Add Source</h3>
+        <div class="stack">
+          <input id="sourceLabel" placeholder="Source label, like Nvidia" />
+          <input id="sourcePath" placeholder="Container path, like /mnt/recordings/Nvidia" />
+          <div class="row">
+            <button id="browseRootBtn">Browse</button>
+            <button id="addSourceBtn" class="primary">Add Source</button>
+          </div>
+          <div class="muted">Use container paths, not Windows host paths.</div>
+        </div>
       </div>
-      <div class="nav-sub" id="source-nav"></div>
-    </div>
-    <div class="nav-divider"></div>
-    <div class="nav-section">
-      <div class="nav-item" data-page="clips" onclick="navigateTo('clips')">
-        Clips <span class="count" id="clips-count">0</span>
+
+      <div class="panel">
+        <h3>Settings</h3>
+        <div class="stack">
+          <label class="muted">Auto refresh</label>
+          <select id="autoRefresh">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+          </select>
+
+          <label class="muted">Refresh interval (seconds)</label>
+          <input id="refreshInterval" type="number" min="5" max="3600" />
+
+          <label class="muted">Clips save folder</label>
+          <input id="clipsPath" placeholder="/data/clips" />
+
+          <div class="row">
+            <button id="browseClipsBtn">Browse</button>
+            <button id="saveSettingsBtn" class="primary">Save</button>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="nav-divider"></div>
-    <div class="nav-section">
-      <div class="nav-item" data-page="settings" onclick="navigateTo('settings')">
-        Settings <span style="color:var(--text-dim);font-size:11px">&#9656;</span>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- Main Content -->
-<div class="main">
-
-  <!-- ── Recordings Page ──────────────────────────────────── -->
-  <div class="page active" id="page-recordings">
-    <div class="topbar">
-      <h1>Recordings</h1>
-      <div class="spacer"></div>
-      <select id="source-filter" onchange="loadRecordings()">
-        <option value="">All Sources</option>
-      </select>
-      <input type="text" placeholder="Search..." id="search-input" oninput="filterRecordings()">
-      <button class="topbar-btn" id="delete-selected-btn" onclick="deleteSelectedRecordings()" style="display:none">Delete Selected</button>
-      <button class="topbar-btn" onclick="loadRecordings()">Reload</button>
-    </div>
-    <div class="recordings-grid" id="recordings-grid"></div>
-  </div>
-
-  <!-- ── Clips Page ───────────────────────────────────────── -->
-  <div class="page" id="page-clips">
-    <div class="topbar">
-      <h1>Clips</h1>
-      <div class="spacer"></div>
-      <input type="text" placeholder="Search..." id="clips-search" oninput="filterClips()">
-    </div>
-    <div class="clips-grid" id="clips-grid"></div>
-  </div>
-
-  <!-- ── Settings Page ────────────────────────────────────── -->
-  <div class="page" id="page-settings">
-    <div class="topbar">
-      <h1>Settings</h1>
-      <div class="spacer"></div>
-      <button class="topbar-btn" onclick="loadRecordings();toast('Files reloaded','success')">Reload Files</button>
-    </div>
-    <div class="settings-content">
-      <div class="settings-card">
+      <div class="panel">
         <h3>Sources</h3>
-        <p class="desc">Add a source root inside your container like /mnt/recordings/Nvidia</p>
-        <label>Label</label>
-        <input type="text" id="new-source-label" placeholder="Nvidia">
-        <label>Root path</label>
-        <div style="display:flex;gap:6px;align-items:center">
-          <input type="text" id="new-source-path" placeholder="/mnt/recordings/Nvidia" style="flex:1">
-          <button class="add-btn" onclick="openFolderBrowser('new-source-path')" style="margin-top:0;white-space:nowrap">Browse</button>
-        </div>
-        <button class="add-btn" onclick="addSource()">Add Source</button>
-        <div class="source-list" id="source-list"></div>
+        <div id="sourcesList" class="grid"></div>
       </div>
-      <div class="settings-card">
-        <h3>Sync + Auto Refresh</h3>
-        <p class="desc">These settings are stored on the server, so your phone and desktop match.</p>
-        <div class="settings-check">
-          <input type="checkbox" id="auto-refresh-check" checked>
-          <label for="auto-refresh-check" style="margin:0">Auto refresh recordings</label>
+
+      <div class="panel hidden" id="browserPanel">
+        <div class="row" style="justify-content: space-between;">
+          <h3>Folder Browser</h3>
+          <button id="closeBrowserBtn">Close</button>
         </div>
-        <p style="margin-top:8px;font-size:13px">Enabled</p>
-        <label>Refresh interval (seconds)</label>
-        <input type="number" id="refresh-interval" value="20" min="5" max="300">
-        <label>Clips save folder</label>
-        <div style="display:flex;gap:6px;align-items:center">
-          <input type="text" id="clips-path" placeholder="/app/data/clips" style="flex:1">
-          <button class="add-btn" onclick="openFolderBrowser('clips-path')" style="margin-top:0;white-space:nowrap">Browse</button>
+        <div class="muted" id="browserPath">/</div>
+        <div class="row" style="margin: 10px 0;">
+          <button id="browserUpBtn">Up</button>
+          <button id="browserChooseBtn" class="primary">Use This Folder</button>
         </div>
-        <button class="save-btn" onclick="saveSettings()">Save</button>
-        <p style="margin-top:8px;font-size:11px;color:var(--text-dim)">Note: 20 seconds is usually fine. It only lists file names and metadata, it does not copy files.</p>
+        <div class="browser-list" id="browserList"></div>
       </div>
-    </div>
-  </div>
-</div>
+    </aside>
 
-<!-- ── Video Editor Overlay ─────────────────────────────────── -->
-<div class="editor-overlay" id="editor-overlay">
-  <div class="editor-top">
-    <div>
-      <div class="file-name" id="editor-filename"></div>
-      <div class="file-path" id="editor-filepath"></div>
-    </div>
-    <button class="close-btn" onclick="closeEditor()">Close</button>
-  </div>
-  <div class="editor-body">
-    <div class="editor-video-area">
-      <div class="editor-video-container">
-        <video id="editor-video"></video>
+    <main class="main">
+      <div id="statusBox" class="status"></div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="recordingsTab">Recordings</button>
+        <button class="tab" data-tab="clipsTab">Clips</button>
       </div>
-      <div class="player-controls">
-        <button class="play-btn" id="play-btn" onclick="togglePlay()">&#9654;</button>
-        <input type="range" class="scrubber" id="scrubber" min="0" max="1000" value="0" oninput="onScrub(this.value)">
-        <span class="player-time" id="player-time">0:00 / 0:00</span>
-        <button class="vol-btn" onclick="toggleMute()">&#128266;</button>
-        <button class="fs-btn" onclick="toggleFullscreen()">&#x26F6;</button>
-      </div>
-      <div class="trim-area">
-        <div class="trim-info">
-          <span id="trim-range">Trim Range 0.00s &rarr; 0.00s</span>
-          <span>Timeline <input type="range" id="timeline-zoom" min="100" max="500" value="100"
-                style="width:100px;vertical-align:middle;accent-color:var(--accent)"
-                oninput="updateZoomLabel(this.value)"> <span id="zoom-label">100%</span></span>
-        </div>
-        <div class="trim-track" id="trim-track">
-          <div class="trim-selected" id="trim-selected"></div>
-          <div class="trim-handle" id="trim-handle-left" style="left:0"></div>
-          <div class="trim-handle" id="trim-handle-right" style="right:0"></div>
-          <div class="trim-playhead" id="trim-playhead" style="left:0"></div>
-        </div>
-        <div class="trim-buttons">
-          <button class="trim-btn" onclick="seekRelative(-5)">&#8634; 5s</button>
-          <button class="trim-btn" onclick="playSelection()">Play</button>
-          <button class="trim-btn" onclick="seekRelative(5)">5s &#8635;</button>
-          <button class="trim-btn accent" onclick="addTrimSegment()">&#9988; Add Trim</button>
-          <span style="font-size:12px;color:var(--text-dim);margin-left:8px" id="playback-time">0:00 / 0:00</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- Clip Output Panel -->
-    <div class="clip-panel">
-      <h3>Clip Output</h3>
-      <p class="subtitle">Clips save to the global Clips folder and only show under the Clips tab.</p>
-
-      <label>Clip title</label>
-      <input type="text" id="clip-title">
-
-      <label>Game</label>
-      <input type="text" id="clip-game" value="Unknown">
-
-      <div class="time-inputs">
-        <div class="time-group">
-          <label>Start (seconds)</label>
-          <div style="display:flex;align-items:center;gap:4px">
-            <input type="number" id="clip-start" step="0.01" value="0">
-            <button onclick="setStartToCurrent()" title="Set to current time" style="background:var(--accent);border:none;border-radius:4px;color:#fff;width:22px;height:22px;cursor:pointer;font-size:11px">&#9660;</button>
+      <section id="recordingsTab">
+        <div class="panel">
+          <div class="row">
+            <select id="sourceFilter" style="max-width: 260px;">
+              <option value="">All Sources</option>
+            </select>
+            <button id="reloadRecordingsBtn">Reload</button>
+            <button id="deleteSelectedRecordingsBtn" class="danger">Delete Selected</button>
           </div>
         </div>
-        <div class="time-group">
-          <label>End (seconds)</label>
-          <div style="display:flex;align-items:center;gap:4px">
-            <input type="number" id="clip-end" step="0.01" value="0">
-            <button onclick="setEndToCurrent()" title="Set to current time" style="background:var(--accent);border:none;border-radius:4px;color:#fff;width:22px;height:22px;cursor:pointer;font-size:11px">&#9660;</button>
+
+        <div class="panel hidden" id="playerPanel">
+          <h3 id="playerTitle">Preview</h3>
+          <div class="video-wrap">
+            <video id="videoPlayer" controls preload="metadata"></video>
+          </div>
+
+          <div class="two-col">
+            <div class="stack">
+              <label class="muted">Clip title</label>
+              <input id="clipTitle" placeholder="Clip title" />
+            </div>
+            <div class="stack">
+              <label class="muted">Game</label>
+              <input id="clipGame" placeholder="Game name" value="Unknown" />
+            </div>
+          </div>
+
+          <div class="two-col" style="margin-top: 12px;">
+            <div class="stack">
+              <label class="muted">Start (seconds)</label>
+              <input id="clipStart" type="number" min="0" step="0.01" value="0" />
+            </div>
+            <div class="stack">
+              <label class="muted">End (seconds)</label>
+              <input id="clipEnd" type="number" min="0" step="0.01" value="0" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top: 12px;">
+            <button id="setStartBtn">Set Start From Current Time</button>
+            <button id="setEndBtn">Set End From Current Time</button>
+            <label class="row" style="margin-left: auto;">
+              <input type="checkbox" id="losslessClip" checked style="width:auto;" />
+              <span class="muted">Lossless cut</span>
+            </label>
+            <button id="createClipBtn" class="primary">Create Clip</button>
           </div>
         </div>
-      </div>
 
-      <div class="audio-tracks" id="audio-tracks-section" style="display:none">
-        <h4>Audio Tracks &amp; Mixing</h4>
-        <div id="audio-tracks-list"></div>
-        <p style="font-size:11px;color:var(--text-dim);margin-top:6px">
-          Check the boxes to combine multiple tracks (like Game + Mic) into one file.
-          <strong>Note:</strong> Mixing automatically bumps the default volume sliders up to prevent standard volume halving, but you can adjust them manually.
-        </p>
-      </div>
+        <div id="recordingsList" class="grid"></div>
+      </section>
 
-      <div style="margin-top:12px">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="checkbox" id="lossless-check" checked style="accent-color:var(--accent)">
-          Lossless cut (stream copy)
-        </label>
-      </div>
-
-      <button class="create-clip-btn" id="remux-btn" onclick="remuxCurrentRecording()" style="margin-top:10px;background:#1f66b8">
-        Remux to MP4 (fast, no re-encode)
-      </button>
-      <p id="remux-help" style="margin-top:6px;font-size:11px;color:var(--text-dim)"></p>
-
-      <button class="create-clip-btn" id="create-clip-btn" onclick="createClip()">Create Clip</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Folder Browser Modal ─────────────────────────────────── -->
-<div class="folder-modal-backdrop" id="folder-modal">
-  <div class="folder-modal">
-    <div class="folder-modal-header">
-      <h3>Browse Folders</h3>
-      <button class="folder-modal-close" onclick="closeFolderBrowser()">&times;</button>
-    </div>
-    <div class="folder-breadcrumb" id="folder-breadcrumb"></div>
-    <div class="folder-list" id="folder-list">
-      <div class="folder-loading">Loading...</div>
-    </div>
-    <div class="folder-modal-footer">
-      <span class="selected-path" id="folder-selected-path">/</span>
-      <button class="folder-cancel-btn" onclick="closeFolderBrowser()">Cancel</button>
-      <button class="folder-select-btn" onclick="selectFolder()">Select This Folder</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast-container" id="toast-container"></div>
-
-<script>
-// ── State ───────────────────────────────────────────────────
-let currentPage = 'recordings';
-let sources = [];
-let allRecordings = [];
-let selectedRecordings = new Set();
-let currentSourceFilter = '';
-let editorFile = null;
-let editorDuration = 0;
-let trimStart = 0;
-let trimEnd = 0;
-let audioTracks = [];
-let refreshTimer = null;
-
-// Folder browser state
-let folderBrowserTarget = null;
-let folderBrowserCurrentPath = '/';
-
-const video = document.getElementById('editor-video');
-
-// ── Navigation ──────────────────────────────────────────────
-function navigateTo(page, sourceFilter) {
-  currentPage = page;
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll(`.nav-item[data-page="${page}"]`).forEach(n => n.classList.add('active'));
-
-  if (page === 'recordings') {
-    if (sourceFilter !== undefined) {
-      currentSourceFilter = sourceFilter;
-      document.getElementById('source-filter').value = sourceFilter;
-    }
-    loadRecordings();
-  }
-  if (page === 'clips') loadClips();
-  if (page === 'settings') loadSettings();
-}
-
-// ── Toast ───────────────────────────────────────────────────
-function toast(msg, type = 'info') {
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  document.getElementById('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-// ── Format helpers ──────────────────────────────────────────
-function fmtTime(s) {
-  if (!isFinite(s) || s < 0) s = 0;
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${String(sec).padStart(2, '0')}`;
-}
-function fmtTimeFull(s) {
-  if (!isFinite(s) || s < 0) s = 0;
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = Math.floor(s % 60);
-  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-  return `${m}:${String(sec).padStart(2,'0')}`;
-}
-function fmtSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
-  return (bytes / 1073741824).toFixed(1) + ' GB';
-}
-
-async function parseApiResponse(res) {
-  const text = await res.text();
-  if (!text) return {};
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { detail: text };
-  }
-}
-
-// ── Sources ─────────────────────────────────────────────────
-async function loadSources() {
-  const res = await fetch('/api/sources');
-  const data = await parseApiResponse(res);
-  if (!res.ok) {
-    toast(data.detail || `Failed to load sources (${res.status})`, 'error');
-    return;
-  }
-  sources = data.sources;
-
-  const nav = document.getElementById('source-nav');
-  nav.innerHTML = '';
-  sources.forEach(s => {
-    const el = document.createElement('div');
-    el.className = 'nav-item' + (currentSourceFilter === s.label ? ' active' : '');
-    el.dataset.page = 'recordings';
-    el.innerHTML = `${s.label} <span class="count">${s.count}</span>`;
-    el.onclick = () => navigateTo('recordings', s.label);
-    nav.appendChild(el);
-  });
-
-  const total = sources.reduce((a, s) => a + s.count, 0);
-  document.getElementById('total-count').textContent = total;
-
-  const select = document.getElementById('source-filter');
-  const currentVal = select.value;
-  select.innerHTML = '<option value="">All Sources</option>';
-  sources.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.label;
-    opt.textContent = s.label;
-    select.appendChild(opt);
-  });
-  select.value = currentVal;
-}
-
-// ── Recordings ──────────────────────────────────────────────
-async function loadRecordings() {
-  const source = document.getElementById('source-filter').value;
-  const url = source ? `/api/recordings?source=${encodeURIComponent(source)}` : '/api/recordings';
-  const res = await fetch(url);
-  const data = await parseApiResponse(res);
-  if (!res.ok) {
-    toast(data.detail || `Failed to load recordings (${res.status})`, 'error');
-    return;
-  }
-  allRecordings = data.recordings;
-  renderRecordings(allRecordings);
-  loadSources();
-}
-
-function filterRecordings() {
-  const q = document.getElementById('search-input').value.toLowerCase();
-  const filtered = allRecordings.filter(r => r.name.toLowerCase().includes(q));
-  renderRecordings(filtered);
-}
-
-function updateSelectedRecordingsUi() {
-  const btn = document.getElementById('delete-selected-btn');
-  if (selectedRecordings.size > 0) {
-    btn.style.display = '';
-    btn.textContent = `Delete Selected (${selectedRecordings.size})`;
-  } else {
-    btn.style.display = 'none';
-  }
-}
-
-function renderRecordings(recs) {
-  const grid = document.getElementById('recordings-grid');
-  grid.innerHTML = '';
-  if (!recs.length) {
-    grid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1">No recordings found. Add source folders in Settings.</div>';
-    return;
-  }
-  recs.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'rec-card';
-    card.onclick = () => openEditor(r);
-    const checked = selectedRecordings.has(r.path) ? 'checked' : '';
-    const thumbUrl = `/api/recordings/thumbnail?path=${encodeURIComponent(r.path)}&time=1`;
-    card.innerHTML = `
-      <input type="checkbox" class="card-select" ${checked}
-             onclick="event.stopPropagation()"
-             onchange="toggleRecordingSelection('${r.path.replace(/'/g, "\\'")}')">
-      <img class="thumb" src="${thumbUrl}" loading="lazy"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">
-      <div class="thumb-placeholder" style="display:none">&#9654;</div>
-      <div class="card-info">
-        <div class="card-name"><span class="src-dot"></span>${r.name}</div>
-        <div class="card-meta">
-          <span>${r.source}</span>
-          <span>${fmtSize(r.size)}</span>
+      <section id="clipsTab" class="hidden">
+        <div class="panel">
+          <div class="row">
+            <button id="reloadClipsBtn">Reload</button>
+            <button id="deleteSelectedClipsBtn" class="danger">Delete Selected</button>
+          </div>
         </div>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-  updateSelectedRecordingsUi();
-}
+        <div id="clipsList" class="grid"></div>
+      </section>
+    </main>
+  </div>
 
-function toggleRecordingSelection(path) {
-  if (selectedRecordings.has(path)) selectedRecordings.delete(path);
-  else selectedRecordings.add(path);
-  updateSelectedRecordingsUi();
-}
+  <script>
+    const state = {
+      selectedRecordingPaths: new Set(),
+      selectedClipPaths: new Set(),
+      currentRecording: null,
+      browserTarget: null,
+      browserCurrentPath: "/",
+      autoRefreshTimer: null,
+    };
 
-async function deleteSelectedRecordings() {
-  const paths = Array.from(selectedRecordings);
-  if (!paths.length) return;
-  if (!confirm(`Delete ${paths.length} selected recording(s)?`)) return;
+    const $ = (id) => document.getElementById(id);
 
-  try {
-    const res = await fetch('/api/recordings/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      toast(`Delete failed: ${data.detail || 'Unknown error'}`, 'error');
-      return;
+    function showStatus(message, type = "success") {
+      const box = $("statusBox");
+      box.textContent = message;
+      box.className = `status show ${type}`;
+      clearTimeout(showStatus._timer);
+      showStatus._timer = setTimeout(() => {
+        box.className = "status";
+      }, 3500);
     }
 
-    selectedRecordings.clear();
-    const failedCount = (data.failed || []).length;
-    if (failedCount) {
-      toast(`Deleted ${data.deleted}, failed ${failedCount}`, 'error');
-    } else {
-      toast(`Deleted ${data.deleted} recording(s)`, 'success');
-    }
-    await loadRecordings();
-  } catch (e) {
-    toast(`Delete failed: ${e.message}`, 'error');
-  }
-}
+    async function api(url, options = {}) {
+      const response = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
 
-// ── Editor ──────────────────────────────────────────────────
-async function openEditor(rec) {
-  editorFile = rec;
-  document.getElementById('editor-filename').textContent = rec.name;
-  document.getElementById('editor-filepath').textContent = rec.path;
-  document.getElementById('clip-title').value = rec.name.replace(/\.[^.]+$/, '');
-  document.getElementById('editor-overlay').classList.add('visible');
-
-  const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
-  const info = await infoRes.json();
-  audioTracks = info.audio_tracks || [];
-  renderAudioTracks();
-
-  const transcode = info.needs_transcode_preview ? '&transcode=1' : '';
-  video.src = `/stream?path=${encodeURIComponent(rec.path)}${transcode}`;
-  video.load();
-
-  const remuxHelp = document.getElementById('remux-help');
-  if (info.extension === '.mkv' || info.needs_transcode_preview) {
-    remuxHelp.textContent = 'This format may not preview reliably in Firefox. Remux creates an MP4 in this same folder and removes the source after success.';
-  } else {
-    remuxHelp.textContent = 'Remux creates an MP4 in this same folder quickly without re-encoding (if codecs are MP4-compatible).';
-  }
-
-  video.onloadedmetadata = () => {
-    editorDuration = video.duration;
-    trimStart = 0;
-    trimEnd = editorDuration;
-    document.getElementById('clip-start').value = '0.00';
-    document.getElementById('clip-end').value = editorDuration.toFixed(2);
-    document.getElementById('scrubber').max = 1000;
-    updateTrimUI();
-    updatePlayerTime();
-  };
-}
-
-function closeEditor() {
-  document.getElementById('editor-overlay').classList.remove('visible');
-  video.pause();
-  video.src = '';
-  editorFile = null;
-}
-
-// ── Player ──────────────────────────────────────────────────
-function togglePlay() {
-  if (video.paused) video.play(); else video.pause();
-}
-video.addEventListener('play', () => { document.getElementById('play-btn').innerHTML = '&#9646;&#9646;'; });
-video.addEventListener('pause', () => { document.getElementById('play-btn').innerHTML = '&#9654;'; });
-video.addEventListener('timeupdate', () => {
-  updatePlayerTime();
-  updateTrimPlayhead();
-  if (editorDuration > 0) {
-    document.getElementById('scrubber').value = (video.currentTime / editorDuration) * 1000;
-  }
-});
-
-function onScrub(val) { video.currentTime = (val / 1000) * editorDuration; }
-
-function updatePlayerTime() {
-  document.getElementById('player-time').textContent = `${fmtTimeFull(video.currentTime)} / ${fmtTimeFull(editorDuration)}`;
-  document.getElementById('playback-time').textContent = `${fmtTimeFull(video.currentTime)} / ${fmtTimeFull(editorDuration)}`;
-}
-
-function seekRelative(dt) { video.currentTime = Math.max(0, Math.min(editorDuration, video.currentTime + dt)); }
-function toggleMute() { video.muted = !video.muted; }
-
-function toggleFullscreen() {
-  const container = document.querySelector('.editor-video-container');
-  if (document.fullscreenElement) document.exitFullscreen();
-  else container.requestFullscreen();
-}
-
-// ── Trim ────────────────────────────────────────────────────
-function updateTrimUI() {
-  if (!editorDuration) return;
-  const selected = document.getElementById('trim-selected');
-  const handleL = document.getElementById('trim-handle-left');
-  const handleR = document.getElementById('trim-handle-right');
-
-  const startPct = (trimStart / editorDuration) * 100;
-  const endPct = (trimEnd / editorDuration) * 100;
-
-  selected.style.left = startPct + '%';
-  selected.style.width = (endPct - startPct) + '%';
-  handleL.style.left = startPct + '%';
-  handleR.style.left = endPct + '%';
-
-  document.getElementById('trim-range').textContent = `Trim Range ${trimStart.toFixed(2)}s \u2192 ${trimEnd.toFixed(2)}s`;
-  document.getElementById('clip-start').value = trimStart.toFixed(2);
-  document.getElementById('clip-end').value = trimEnd.toFixed(2);
-}
-
-function updateTrimPlayhead() {
-  if (!editorDuration) return;
-  document.getElementById('trim-playhead').style.left = (video.currentTime / editorDuration) * 100 + '%';
-}
-
-function updateZoomLabel(val) { document.getElementById('zoom-label').textContent = val + '%'; }
-
-let dragHandle = null;
-document.getElementById('trim-handle-left').addEventListener('mousedown', (e) => { e.preventDefault(); dragHandle = 'left'; });
-document.getElementById('trim-handle-right').addEventListener('mousedown', (e) => { e.preventDefault(); dragHandle = 'right'; });
-
-document.addEventListener('mousemove', (e) => {
-  if (!dragHandle) return;
-  const track = document.getElementById('trim-track');
-  const rect = track.getBoundingClientRect();
-  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  const t = pct * editorDuration;
-  if (dragHandle === 'left') trimStart = Math.max(0, Math.min(t, trimEnd - 0.01));
-  else trimEnd = Math.min(editorDuration, Math.max(t, trimStart + 0.01));
-  updateTrimUI();
-});
-document.addEventListener('mouseup', () => { dragHandle = null; });
-
-document.getElementById('trim-track').addEventListener('click', (e) => {
-  if (e.target.id.includes('handle')) return;
-  const rect = e.currentTarget.getBoundingClientRect();
-  video.currentTime = ((e.clientX - rect.left) / rect.width) * editorDuration;
-});
-
-function setStartToCurrent() {
-  trimStart = video.currentTime;
-  if (trimStart >= trimEnd) trimEnd = Math.min(editorDuration, trimStart + 0.1);
-  updateTrimUI();
-}
-function setEndToCurrent() {
-  trimEnd = video.currentTime;
-  if (trimEnd <= trimStart) trimStart = Math.max(0, trimEnd - 0.1);
-  updateTrimUI();
-}
-
-function playSelection() {
-  video.currentTime = trimStart;
-  video.play();
-  const handler = () => {
-    if (video.currentTime >= trimEnd) { video.pause(); video.removeEventListener('timeupdate', handler); }
-  };
-  video.addEventListener('timeupdate', handler);
-}
-
-function addTrimSegment() {
-  trimStart = video.currentTime;
-  trimEnd = Math.min(editorDuration, video.currentTime + 10);
-  updateTrimUI();
-  toast('Trim range set from current position', 'info');
-}
-
-// ── Audio Tracks ────────────────────────────────────────────
-function renderAudioTracks() {
-  const section = document.getElementById('audio-tracks-section');
-  const list = document.getElementById('audio-tracks-list');
-  if (!audioTracks.length) { section.style.display = 'none'; return; }
-  section.style.display = '';
-  list.innerHTML = '';
-  audioTracks.forEach((t, i) => {
-    const el = document.createElement('div');
-    el.className = 'audio-track-item';
-    const defaultVol = audioTracks.length > 1 ? 200 : 100;
-    el.innerHTML = `
-      <input type="checkbox" checked data-track="${i}" class="track-check">
-      <span style="min-width:80px">Track ${i + 1} (${t.language})</span>
-      <input type="range" min="0" max="300" value="${defaultVol}" data-track="${i}" class="track-vol">
-      <span class="vol-label">${defaultVol}%</span>
-    `;
-    el.querySelector('.track-vol').addEventListener('input', function() {
-      this.nextElementSibling.textContent = this.value + '%';
-    });
-    list.appendChild(el);
-  });
-}
-
-// ── Create Clip ─────────────────────────────────────────────
-async function createClip() {
-  if (!editorFile) return;
-  const title = document.getElementById('clip-title').value || editorFile.name;
-  const game = document.getElementById('clip-game').value || 'Unknown';
-  const start = parseFloat(document.getElementById('clip-start').value) || 0;
-  const end = parseFloat(document.getElementById('clip-end').value) || editorDuration;
-  const lossless = document.getElementById('lossless-check').checked;
-
-  let audioTrackSettings = null;
-  if (!lossless && audioTracks.length > 0) {
-    audioTrackSettings = [];
-    document.querySelectorAll('.track-check').forEach((cb, i) => {
-      const vol = parseInt(document.querySelectorAll('.track-vol')[i].value);
-      audioTrackSettings.push({ index: i, enabled: cb.checked, volume: vol });
-    });
-  }
-
-  const btn = document.getElementById('create-clip-btn');
-  btn.disabled = true;
-  btn.textContent = 'Creating...';
-
-  try {
-    const res = await fetch('/api/clip', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filepath: editorFile.path, source_label: editorFile.source, start, end, title, game, lossless, audio_tracks: audioTrackSettings }),
-    });
-    const data = await res.json();
-    if (res.ok) toast(`Clip created: ${data.name} (${fmtSize(data.size)})`, 'success');
-    else toast(`Error: ${data.detail}`, 'error');
-  } catch (e) { toast(`Error: ${e.message}`, 'error'); }
-
-  btn.disabled = false;
-  btn.textContent = 'Create Clip';
-}
-
-async function remuxCurrentRecording() {
-  if (!editorFile) return;
-  const btn = document.getElementById('remux-btn');
-  btn.disabled = true;
-  btn.textContent = 'Remuxing...';
-
-  try {
-    const res = await fetch(`/api/recordings/remux?path=${encodeURIComponent(editorFile.path)}`, { method: 'POST' });
-    const data = await res.json();
-    if (!res.ok) {
-      toast(`Remux failed: ${data.detail || 'Unknown error'}`, 'error');
-      return;
-    }
-
-    const statusEl = document.getElementById('remux-help');
-    statusEl.textContent = 'Remux queued. You can stay here and watch status update...';
-
-    const jobId = data.job_id;
-    let done = false;
-    while (!done) {
-      await new Promise(r => setTimeout(r, 1200));
-      const stRes = await fetch(`/api/recordings/remux/status?job_id=${encodeURIComponent(jobId)}`);
-      const st = await stRes.json();
-
-      if (!stRes.ok) {
-        toast(`Remux status failed: ${st.detail || 'Unknown error'}`, 'error');
-        break;
+      const text = await response.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(text || `Request failed: ${response.status}`);
       }
 
-      if (st.status === 'queued') {
-        statusEl.textContent = 'Remux queued...';
-      } else if (st.status === 'running') {
-        statusEl.textContent = 'Remux running...';
-      } else if (st.status === 'completed') {
-        const result = st.result || {};
-        toast(`Remux complete: ${result.name || 'output.mp4'} (${fmtSize(result.size || 0)}). Original file deleted.`, 'success');
-        statusEl.textContent = `Saved to: ${result.path || data.output_path}`;
-        await loadClips();
-        closeEditor();
+      if (!response.ok) {
+        throw new Error(data.detail || `Request failed: ${response.status}`);
+      }
+
+      return data;
+    }
+
+    function fmtBytes(bytes = 0) {
+      const units = ["B", "KB", "MB", "GB", "TB"];
+      let i = 0;
+      let n = bytes;
+      while (n >= 1024 && i < units.length - 1) {
+        n /= 1024;
+        i++;
+      }
+      return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+    }
+
+    function fmtDate(ts) {
+      return new Date(ts * 1000).toLocaleString();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+      });
+
+      $("recordingsTab").classList.toggle("hidden", tabId !== "recordingsTab");
+      $("clipsTab").classList.toggle("hidden", tabId !== "clipsTab");
+    }
+
+    async function loadSources() {
+      const data = await api("/api/sources");
+      const list = $("sourcesList");
+      const filter = $("sourceFilter");
+
+      list.innerHTML = "";
+      filter.innerHTML = `<option value="">All Sources</option>`;
+
+      for (const source of data.sources) {
+        const card = document.createElement("div");
+        card.className = "source-item";
+        card.innerHTML = `
+          <div class="title">${escapeHtml(source.label)}</div>
+          <div class="meta source-path">${escapeHtml(source.path)}</div>
+          <div class="meta">${source.count} recordings</div>
+          <div class="actions">
+            <button class="danger" data-remove-source="${escapeAttr(source.label)}">Remove</button>
+          </div>
+        `;
+        list.appendChild(card);
+
+        const opt = document.createElement("option");
+        opt.value = source.label;
+        opt.textContent = source.label;
+        filter.appendChild(opt);
+      }
+
+      list.querySelectorAll("[data-remove-source]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const label = btn.getAttribute("data-remove-source");
+          if (!confirm(`Remove source "${label}"?`)) return;
+
+          try {
+            await api(`/api/sources/${encodeURIComponent(label)}`, { method: "DELETE" });
+            showStatus(`Removed source: ${label}`);
+            await Promise.all([loadSources(), loadRecordings()]);
+          } catch (err) {
+            showStatus(err.message, "error");
+          }
+        });
+      });
+    }
+
+    async function loadSettings() {
+      const data = await api("/api/settings");
+      $("autoRefresh").value = String(data.auto_refresh);
+      $("refreshInterval").value = data.refresh_interval;
+      $("clipsPath").value = data.clips_path || "/data/clips";
+
+      resetAutoRefresh();
+    }
+
+    async function saveSettings() {
+      await api("/api/settings", {
+        method: "PUT",
+        body: JSON.stringify({
+          auto_refresh: $("autoRefresh").value === "true",
+          refresh_interval: Number($("refreshInterval").value || 20),
+          clips_path: $("clipsPath").value.trim(),
+        }),
+      });
+
+      showStatus("Settings saved");
+      resetAutoRefresh();
+    }
+
+    async function loadRecordings() {
+      const source = $("sourceFilter").value;
+      const query = source ? `?source=${encodeURIComponent(source)}` : "";
+      const data = await api(`/api/recordings${query}`);
+      const list = $("recordingsList");
+      list.innerHTML = "";
+
+      for (const rec of data.recordings) {
+        const checked = state.selectedRecordingPaths.has(rec.path) ? "checked" : "";
+        const card = document.createElement("div");
+        card.className = "recording";
+
+        const thumbUrl = `/api/recordings/thumbnail?path=${encodeURIComponent(rec.path)}&time=1`;
+
+        card.innerHTML = `
+          <input type="checkbox" data-recording-checkbox="${escapeAttr(rec.path)}" ${checked} style="width:auto;" />
+          <img class="thumb" src="${thumbUrl}" alt="" loading="lazy" />
+          <div>
+            <div class="title">${escapeHtml(rec.name)}</div>
+            <div class="meta">${escapeHtml(rec.source)} • ${fmtBytes(rec.size)}</div>
+            <div class="meta">${fmtDate(rec.modified)}</div>
+            <div class="meta source-path">${escapeHtml(rec.path)}</div>
+          </div>
+          <div class="actions">
+            <button data-preview="${escapeAttr(rec.path)}">Preview</button>
+          </div>
+        `;
+
+        list.appendChild(card);
+      }
+
+      list.querySelectorAll("[data-recording-checkbox]").forEach((cb) => {
+        cb.addEventListener("change", () => {
+          const path = cb.getAttribute("data-recording-checkbox");
+          if (cb.checked) state.selectedRecordingPaths.add(path);
+          else state.selectedRecordingPaths.delete(path);
+        });
+      });
+
+      list.querySelectorAll("[data-preview]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const path = btn.getAttribute("data-preview");
+          const rec = data.recordings.find((r) => r.path === path);
+          if (rec) {
+            await previewRecording(rec);
+          }
+        });
+      });
+    }
+
+    async function previewRecording(rec) {
+      state.currentRecording = rec;
+      $("playerPanel").classList.remove("hidden");
+      $("playerTitle").textContent = rec.name;
+
+      const info = await api(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
+      const video = $("videoPlayer");
+      const url = `/stream?path=${encodeURIComponent(rec.path)}&transcode=${info.needs_transcode_preview ? "true" : "false"}`;
+      video.src = url;
+      video.load();
+
+      $("clipTitle").value = rec.name.replace(/\.[^.]+$/, "");
+      $("clipGame").value = "Unknown";
+      $("clipStart").value = "0";
+      $("clipEnd").value = String(Number(info.duration || 0).toFixed(2));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function createClip() {
+      if (!state.currentRecording) {
+        showStatus("Pick a recording first", "error");
+        return;
+      }
+
+      const payload = {
+        filepath: state.currentRecording.path,
+        source_label: state.currentRecording.source,
+        start: Number($("clipStart").value || 0),
+        end: Number($("clipEnd").value || 0),
+        title: $("clipTitle").value.trim() || "clip",
+        game: $("clipGame").value.trim() || "Unknown",
+        lossless: $("losslessClip").checked,
+      };
+
+      if (payload.end <= payload.start) {
+        showStatus("End time must be greater than start time", "error");
+        return;
+      }
+
+      await api("/api/clip", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      showStatus("Clip created");
+      await loadClips();
+      switchTab("clipsTab");
+    }
+
+    async function loadClips() {
+      const data = await api("/api/clips");
+      const list = $("clipsList");
+      list.innerHTML = "";
+
+      for (const clip of data.clips) {
+        const checked = state.selectedClipPaths.has(clip.path) ? "checked" : "";
+        const card = document.createElement("div");
+        card.className = "clip-item";
+        card.innerHTML = `
+          <input type="checkbox" data-clip-checkbox="${escapeAttr(clip.path)}" ${checked} style="width:auto;" />
+          <div>
+            <div class="title">${escapeHtml(clip.name)}</div>
+            <div class="meta">${fmtBytes(clip.size)} • ${fmtDate(clip.modified)}</div>
+            <div class="meta source-path">${escapeHtml(clip.path)}</div>
+          </div>
+          <div class="actions">
+            <button data-play-clip="${escapeAttr(clip.path)}">Play</button>
+            <a href="/api/clips/download?path=${encodeURIComponent(clip.path)}"><button>Download</button></a>
+          </div>
+        `;
+        list.appendChild(card);
+      }
+
+      list.querySelectorAll("[data-clip-checkbox]").forEach((cb) => {
+        cb.addEventListener("change", () => {
+          const path = cb.getAttribute("data-clip-checkbox");
+          if (cb.checked) state.selectedClipPaths.add(path);
+          else state.selectedClipPaths.delete(path);
+        });
+      });
+
+      list.querySelectorAll("[data-play-clip]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const path = btn.getAttribute("data-play-clip");
+          const player = $("videoPlayer");
+          $("playerPanel").classList.remove("hidden");
+          switchTab("recordingsTab");
+          $("playerTitle").textContent = path.split("/").pop();
+          player.src = `/stream/clip?path=${encodeURIComponent(path)}`;
+          player.load();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+    }
+
+    async function deleteSelectedRecordings() {
+      const paths = [...state.selectedRecordingPaths];
+      if (!paths.length) {
+        showStatus("No recordings selected", "error");
+        return;
+      }
+
+      if (!confirm(`Delete ${paths.length} recording(s)?`)) return;
+
+      const result = await api("/api/recordings/delete", {
+        method: "POST",
+        body: JSON.stringify({ paths }),
+      });
+
+      state.selectedRecordingPaths.clear();
+      showStatus(`Deleted ${result.deleted} recording(s)`);
+      await loadRecordings();
+    }
+
+    async function deleteSelectedClips() {
+      const paths = [...state.selectedClipPaths];
+      if (!paths.length) {
+        showStatus("No clips selected", "error");
+        return;
+      }
+
+      if (!confirm(`Delete ${paths.length} clip(s)?`)) return;
+
+      const result = await api("/api/clips/delete", {
+        method: "POST",
+        body: JSON.stringify({ paths }),
+      });
+
+      state.selectedClipPaths.clear();
+      showStatus(`Deleted ${result.deleted} clip(s)`);
+      await loadClips();
+    }
+
+    async function addSource() {
+      const label = $("sourceLabel").value.trim();
+      const path = $("sourcePath").value.trim();
+
+      if (!label || !path) {
+        showStatus("Label and path are required", "error");
+        return;
+      }
+
+      await api("/api/sources", {
+        method: "POST",
+        body: JSON.stringify({ label, path }),
+      });
+
+      $("sourceLabel").value = "";
+      showStatus("Source added");
+      await Promise.all([loadSources(), loadRecordings()]);
+    }
+
+    async function browse(path = "/") {
+      const data = await api(`/api/browse?path=${encodeURIComponent(path)}`);
+      state.browserCurrentPath = data.path;
+      $("browserPanel").classList.remove("hidden");
+      $("browserPath").textContent = data.path;
+
+      const list = $("browserList");
+      list.innerHTML = "";
+
+      for (const dir of data.directories) {
+        const row = document.createElement("div");
+        row.className = "browser-item";
+        row.innerHTML = `
+          <div>${escapeHtml(dir.name)}</div>
+          <button data-open-dir="${escapeAttr(dir.path)}">Open</button>
+        `;
+        list.appendChild(row);
+      }
+
+      list.querySelectorAll("[data-open-dir]").forEach((btn) => {
+        btn.addEventListener("click", () => browse(btn.getAttribute("data-open-dir")));
+      });
+    }
+
+    function chooseBrowserPath() {
+      if (state.browserTarget === "source") {
+        $("sourcePath").value = state.browserCurrentPath;
+      } else if (state.browserTarget === "clips") {
+        $("clipsPath").value = state.browserCurrentPath;
+      }
+      $("browserPanel").classList.add("hidden");
+    }
+
+    function resetAutoRefresh() {
+      if (state.autoRefreshTimer) {
+        clearInterval(state.autoRefreshTimer);
+        state.autoRefreshTimer = null;
+      }
+
+      const enabled = $("autoRefresh").value === "true";
+      const seconds = Number($("refreshInterval").value || 20);
+
+      if (enabled && seconds >= 5) {
+        state.autoRefreshTimer = setInterval(async () => {
+          try {
+            await loadRecordings();
+            await loadClips();
+            await loadSources();
+          } catch (_) {}
+        }, seconds * 1000);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    function bindEvents() {
+      document.querySelectorAll(".tab").forEach((btn) => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      });
+
+      $("addSourceBtn").addEventListener("click", async () => {
+        try {
+          await addSource();
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("saveSettingsBtn").addEventListener("click", async () => {
+        try {
+          await saveSettings();
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("reloadRecordingsBtn").addEventListener("click", async () => {
+        try {
+          await loadRecordings();
+          showStatus("Recordings reloaded");
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("reloadClipsBtn").addEventListener("click", async () => {
+        try {
+          await loadClips();
+          showStatus("Clips reloaded");
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("sourceFilter").addEventListener("change", async () => {
+        try {
+          await loadRecordings();
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("deleteSelectedRecordingsBtn").addEventListener("click", async () => {
+        try {
+          await deleteSelectedRecordings();
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("deleteSelectedClipsBtn").addEventListener("click", async () => {
+        try {
+          await deleteSelectedClips();
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("setStartBtn").addEventListener("click", () => {
+        $("clipStart").value = Number($("videoPlayer").currentTime || 0).toFixed(2);
+      });
+
+      $("setEndBtn").addEventListener("click", () => {
+        $("clipEnd").value = Number($("videoPlayer").currentTime || 0).toFixed(2);
+      });
+
+      $("createClipBtn").addEventListener("click", async () => {
+        try {
+          await createClip();
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("browseRootBtn").addEventListener("click", async () => {
+        state.browserTarget = "source";
+        try {
+          await browse("/");
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("browseClipsBtn").addEventListener("click", async () => {
+        state.browserTarget = "clips";
+        try {
+          await browse("/");
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("browserChooseBtn").addEventListener("click", chooseBrowserPath);
+      $("closeBrowserBtn").addEventListener("click", () => $("browserPanel").classList.add("hidden"));
+      $("browserUpBtn").addEventListener("click", async () => {
+        const current = state.browserCurrentPath || "/";
+        const parent = current === "/" ? "/" : current.split("/").slice(0, -1).join("/") || "/";
+        try {
+          await browse(parent);
+        } catch (err) {
+          showStatus(err.message, "error");
+        }
+      });
+
+      $("autoRefresh").addEventListener("change", resetAutoRefresh);
+      $("refreshInterval").addEventListener("change", resetAutoRefresh);
+    }
+
+    async function boot() {
+      bindEvents();
+      try {
+        await loadSettings();
+        await loadSources();
         await loadRecordings();
-        done = true;
-      } else if (st.status === 'failed') {
-        toast(`Remux failed: ${st.error || 'Unknown error'}`, 'error');
-        statusEl.textContent = `Remux failed: ${st.error || 'Unknown error'}`;
-        done = true;
+        await loadClips();
+      } catch (err) {
+        showStatus(err.message, "error");
       }
     }
-  } catch (e) {
-    toast(`Remux failed: ${e.message}`, 'error');
-  }
 
-  btn.disabled = false;
-  btn.textContent = 'Remux to MP4 (fast, no re-encode)';
-}
-
-// ── Clips Page ──────────────────────────────────────────────
-let allClips = [];
-async function loadClips() {
-  const res = await fetch('/api/clips');
-  const data = await res.json();
-  allClips = data.clips;
-  document.getElementById('clips-count').textContent = allClips.length;
-  renderClips(allClips);
-}
-
-function filterClips() {
-  const q = document.getElementById('clips-search').value.toLowerCase();
-  renderClips(allClips.filter(c => c.name.toLowerCase().includes(q)));
-}
-
-function renderClips(clips) {
-  const grid = document.getElementById('clips-grid');
-  grid.innerHTML = '';
-  if (!clips.length) {
-    grid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1">No clips yet. Open a recording and create one.</div>';
-    return;
-  }
-  clips.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'clip-card';
-    card.innerHTML = `
-      <video src="/stream/clip?path=${encodeURIComponent(c.path)}" preload="metadata" muted
-             onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
-      <div class="clip-info">
-        <div class="clip-name" title="${c.name}">${c.name}</div>
-        <div class="clip-meta">
-          <span>${c.meta ? c.meta.game : ''}</span>
-          <span>${fmtSize(c.size)}</span>
-          <span>${new Date(c.modified * 1000).toLocaleDateString()}</span>
-        </div>
-      </div>
-      <div class="clip-actions">
-        <a class="clip-btn" href="/api/clips/download?path=${encodeURIComponent(c.path)}" target="_blank">Download</a>
-        <button class="clip-btn danger" onclick="deleteClip('${c.path}')">Delete</button>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-}
-
-async function deleteClip(path) {
-  if (!confirm('Delete this clip?')) return;
-  await fetch(`/api/clips?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
-  toast('Clip deleted', 'info');
-  loadClips();
-}
-
-// ── Settings ────────────────────────────────────────────────
-async function loadSettings() {
-  const res = await fetch('/api/settings');
-  const config = await parseApiResponse(res);
-  if (!res.ok) {
-    toast(config.detail || `Failed to load settings (${res.status})`, 'error');
-    return;
-  }
-  document.getElementById('auto-refresh-check').checked = config.auto_refresh;
-  document.getElementById('refresh-interval').value = config.refresh_interval;
-  document.getElementById('clips-path').value = config.clips_path || '/app/data/clips';
-  renderSourcesList(config.sources);
-}
-
-function renderSourcesList(srcs) {
-  const list = document.getElementById('source-list');
-  list.innerHTML = '';
-  srcs.forEach(s => {
-    const el = document.createElement('div');
-    el.className = 'source-item';
-    el.innerHTML = `
-      <div class="source-info">
-        <div class="source-label">${s.label}</div>
-        <div class="source-path">${s.path}</div>
-      </div>
-      <button class="remove-btn" onclick="removeSource('${s.label}')">Remove</button>
-    `;
-    list.appendChild(el);
-  });
-}
-
-async function addSource() {
-  const label = document.getElementById('new-source-label').value.trim();
-  const path = document.getElementById('new-source-path').value.trim();
-  if (!label || !path) { toast('Label and path required', 'error'); return; }
-
-  try {
-    const res = await fetch('/api/sources', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label, path }),
-    });
-    const data = await parseApiResponse(res);
-    if (res.ok) {
-      toast(`Source "${label}" added`, 'success');
-      document.getElementById('new-source-label').value = '';
-      document.getElementById('new-source-path').value = '';
-      loadSettings();
-      loadSources();
-    } else {
-      toast(data.detail, 'error');
-    }
-  } catch (e) { toast(e.message, 'error'); }
-}
-
-async function removeSource(label) {
-  if (!confirm(`Remove source "${label}"?`)) return;
-  await fetch(`/api/sources/${encodeURIComponent(label)}`, { method: 'DELETE' });
-  toast(`Source "${label}" removed`, 'info');
-  loadSettings();
-  loadSources();
-}
-
-async function saveSettings() {
-  const autoRefresh = document.getElementById('auto-refresh-check').checked;
-  const interval = parseInt(document.getElementById('refresh-interval').value) || 20;
-  const clipsPath = document.getElementById('clips-path').value.trim() || '/app/data/clips';
-  const res = await fetch('/api/settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval, clips_path: clipsPath }),
-  });
-  const data = await parseApiResponse(res);
-  if (!res.ok) {
-    toast(data.detail || `Failed to save settings (${res.status})`, 'error');
-    return;
-  }
-  toast('Settings saved', 'success');
-  await loadClips();
-  setupAutoRefresh();
-}
-
-// ── Folder Browser ──────────────────────────────────────────
-function openFolderBrowser(targetInputId) {
-  folderBrowserTarget = targetInputId;
-  const currentPath = document.getElementById(targetInputId).value || '/';
-  document.getElementById('folder-modal').classList.add('visible');
-  browseTo(currentPath.startsWith('/') ? currentPath : '/');
-}
-
-function closeFolderBrowser() {
-  document.getElementById('folder-modal').classList.remove('visible');
-  folderBrowserTarget = null;
-}
-
-async function browseTo(path) {
-  folderBrowserCurrentPath = path;
-  document.getElementById('folder-selected-path').textContent = path;
-
-  // Update breadcrumb
-  const breadcrumb = document.getElementById('folder-breadcrumb');
-  breadcrumb.innerHTML = '';
-  const parts = path.split('/').filter(Boolean);
-
-  const rootCrumb = document.createElement('span');
-  rootCrumb.className = 'crumb' + (parts.length === 0 ? ' current' : '');
-  rootCrumb.textContent = '/';
-  rootCrumb.onclick = () => browseTo('/');
-  breadcrumb.appendChild(rootCrumb);
-
-  let builtPath = '';
-  parts.forEach((part, i) => {
-    builtPath += '/' + part;
-    const sep = document.createElement('span');
-    sep.className = 'sep';
-    sep.textContent = '/';
-    breadcrumb.appendChild(sep);
-
-    const crumb = document.createElement('span');
-    const crumbPath = builtPath;
-    crumb.className = 'crumb' + (i === parts.length - 1 ? ' current' : '');
-    crumb.textContent = part;
-    crumb.onclick = () => browseTo(crumbPath);
-    breadcrumb.appendChild(crumb);
-  });
-
-  // Load directories
-  const list = document.getElementById('folder-list');
-  list.innerHTML = '<div class="folder-loading">Loading...</div>';
-
-  try {
-    const res = await fetch(`/api/browse?path=${encodeURIComponent(path)}`);
-    if (!res.ok) {
-      const err = await res.json();
-      list.innerHTML = `<div class="folder-empty">${err.detail || 'Cannot access this folder'}</div>`;
-      return;
-    }
-    const data = await res.json();
-
-    list.innerHTML = '';
-
-    // Parent directory link
-    if (path !== '/' && data.parent) {
-      const parentItem = document.createElement('div');
-      parentItem.className = 'folder-item';
-      parentItem.innerHTML = '<span class="folder-icon">&#128281;</span><span class="folder-name">..</span>';
-      parentItem.onclick = () => browseTo(data.parent);
-      list.appendChild(parentItem);
-    }
-
-    if (!data.directories.length && path === '/') {
-      list.innerHTML = '<div class="folder-empty">No folders found</div>';
-      return;
-    }
-
-    data.directories.forEach(dir => {
-      const item = document.createElement('div');
-      item.className = 'folder-item';
-      item.innerHTML = `<span class="folder-icon">&#128193;</span><span class="folder-name">${dir.name}</span>`;
-      item.onclick = () => browseTo(dir.path);
-      list.appendChild(item);
-    });
-
-  } catch (e) {
-    list.innerHTML = `<div class="folder-empty">Error: ${e.message}</div>`;
-  }
-}
-
-function selectFolder() {
-  if (folderBrowserTarget) {
-    document.getElementById(folderBrowserTarget).value = folderBrowserCurrentPath;
-  }
-  closeFolderBrowser();
-  toast(`Selected: ${folderBrowserCurrentPath}`, 'success');
-}
-
-// ── Auto Refresh ────────────────────────────────────────────
-async function setupAutoRefresh() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  const res = await fetch('/api/settings');
-  const config = await res.json();
-  if (config.auto_refresh) {
-    refreshTimer = setInterval(() => {
-      if (currentPage === 'recordings' && !editorFile) loadRecordings();
-    }, (config.refresh_interval || 20) * 1000);
-  }
-}
-
-// ── Keyboard Shortcuts ──────────────────────────────────────
-document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-  // Close folder browser on Escape
-  if (e.key === 'Escape' && document.getElementById('folder-modal').classList.contains('visible')) {
-    closeFolderBrowser();
-    return;
-  }
-
-  if (!editorFile) return;
-  switch (e.key) {
-    case ' ': e.preventDefault(); togglePlay(); break;
-    case 'ArrowLeft': e.preventDefault(); seekRelative(e.shiftKey ? -1 : -5); break;
-    case 'ArrowRight': e.preventDefault(); seekRelative(e.shiftKey ? 1 : 5); break;
-    case 'i': case 'I': e.preventDefault(); setStartToCurrent(); break;
-    case 'o': case 'O': e.preventDefault(); setEndToCurrent(); break;
-    case 'Escape': closeEditor(); break;
-  }
-});
-
-// ── Init ────────────────────────────────────────────────────
-loadSources();
-loadRecordings();
-setupAutoRefresh();
-</script>
+    boot();
+  </script>
 </body>
 </html>
