@@ -7,7 +7,7 @@ services:
       - "9069:9069"
     volumes:
       - webclipper_data:/data
-      - /share/recordings:/mnt/recordings
+      - /volume1/Recordings:/mnt/recordings
     restart: unless-stopped
 
 volumes:
