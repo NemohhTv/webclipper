@@ -988,6 +988,11 @@ body {
         </label>
       </div>
 
+      <button class="create-clip-btn" id="remux-btn" onclick="remuxCurrentRecording()" style="margin-top:10px;background:#1f66b8">
+        Remux to MP4 (fast, no re-encode)
+      </button>
+      <p id="remux-help" style="margin-top:6px;font-size:11px;color:var(--text-dim)"></p>
+
       <button class="create-clip-btn" id="create-clip-btn" onclick="createClip()">Create Clip</button>
     </div>
   </div>
@@ -1168,8 +1173,21 @@ async function openEditor(rec) {
   document.getElementById('clip-title').value = rec.name.replace(/\.[^.]+$/, '');
   document.getElementById('editor-overlay').classList.add('visible');
 
-  video.src = `/stream?path=${encodeURIComponent(rec.path)}`;
+  const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
+  const info = await infoRes.json();
+  audioTracks = info.audio_tracks || [];
+  renderAudioTracks();
+
+  const transcode = info.needs_transcode_preview ? '&transcode=1' : '';
+  video.src = `/stream?path=${encodeURIComponent(rec.path)}${transcode}`;
   video.load();
+
+  const remuxHelp = document.getElementById('remux-help');
+  if (info.extension === '.mkv' || info.needs_transcode_preview) {
+    remuxHelp.textContent = 'This format may not preview reliably in Firefox. Use Remux to MP4 for a fast compatibility copy.';
+  } else {
+    remuxHelp.textContent = 'Remux creates an MP4 copy quickly without re-encoding (if codecs are MP4-compatible).';
+  }
 
   video.onloadedmetadata = () => {
     editorDuration = video.duration;
@@ -1181,11 +1199,6 @@ async function openEditor(rec) {
     updateTrimUI();
     updatePlayerTime();
   };
-
-  const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
-  const info = await infoRes.json();
-  audioTracks = info.audio_tracks || [];
-  renderAudioTracks();
 }
 
 function closeEditor() {
@@ -1360,6 +1373,31 @@ async function createClip() {
 
   btn.disabled = false;
   btn.textContent = 'Create Clip';
+}
+
+async function remuxCurrentRecording() {
+  if (!editorFile) return;
+  const btn = document.getElementById('remux-btn');
+  btn.disabled = true;
+  btn.textContent = 'Remuxing...';
+
+  try {
+    const res = await fetch(`/api/recordings/remux?path=${encodeURIComponent(editorFile.path)}`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      toast(`Remux complete: ${data.name} (${fmtSize(data.size)}). Original file deleted.`, 'success');
+      await loadClips();
+      closeEditor();
+      await loadRecordings();
+    } else {
+      toast(`Remux failed: ${data.detail || 'Unknown error'}`, 'error');
+    }
+  } catch (e) {
+    toast(`Remux failed: ${e.message}`, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Remux to MP4 (fast, no re-encode)';
 }
 
 // ── Clips Page ──────────────────────────────────────────────

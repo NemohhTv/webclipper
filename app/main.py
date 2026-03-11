@@ -1,5 +1,6 @@
 import os
 import json
+import mimetypes
 import subprocess
 import time
 from pathlib import Path
@@ -15,6 +16,7 @@ app = FastAPI(title="WebClipper")
 CONFIG_DIR = "/app/data"
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 CLIPS_DIR = os.path.join(CONFIG_DIR, "clips")
+PREVIEW_DIR = os.path.join(CONFIG_DIR, "preview")
 
 DEFAULT_CONFIG = {
     "sources": [],
@@ -23,6 +25,105 @@ DEFAULT_CONFIG = {
 }
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".ts", ".m4v"}
+DIRECT_PLAY_EXTENSIONS = {".mp4", ".webm", ".mov", ".m4v"}
+
+SCAN_CACHE_TTL = 10
+_RECORDINGS_CACHE = {"timestamp": 0.0, "data": []}
+
+
+def _is_video_file(filename: str) -> bool:
+    return os.path.splitext(filename)[1].lower() in VIDEO_EXTENSIONS
+
+
+def _scan_recordings(sources):
+    now = time.time()
+    if (now - _RECORDINGS_CACHE["timestamp"]) < SCAN_CACHE_TTL:
+        return _RECORDINGS_CACHE["data"]
+
+    recordings = []
+    for source in sources:
+        source_path = source.get("path", "")
+        if not os.path.isdir(source_path):
+            continue
+
+        for root, _, files in os.walk(source_path):
+            for filename in files:
+                if not _is_video_file(filename):
+                    continue
+
+                filepath = os.path.join(root, filename)
+                try:
+                    stat = os.stat(filepath)
+                except OSError:
+                    continue
+
+                recordings.append({
+                    "name": filename,
+                    "path": filepath,
+                    "source": source["label"],
+                    "size": stat.st_size,
+                    "modified": stat.st_mtime,
+                })
+
+    recordings.sort(key=lambda item: item["modified"], reverse=True)
+    _RECORDINGS_CACHE["timestamp"] = now
+    _RECORDINGS_CACHE["data"] = recordings
+    return recordings
+
+
+def _invalidate_recordings_cache():
+    _RECORDINGS_CACHE["timestamp"] = 0.0
+    _RECORDINGS_CACHE["data"] = []
+
+
+def _mime_type_for_path(path: str) -> str:
+    guessed, _ = mimetypes.guess_type(path)
+    return guessed or "application/octet-stream"
+
+
+def _preview_output_path(path: str) -> str:
+    os.makedirs(PREVIEW_DIR, exist_ok=True)
+    stat = os.stat(path)
+    cache_key = f"{path}:{stat.st_mtime_ns}:{stat.st_size}"
+    import hashlib
+    filename = hashlib.md5(cache_key.encode()).hexdigest() + ".mp4"
+    return os.path.join(PREVIEW_DIR, filename)
+
+
+def _build_preview_mp4(path: str) -> str:
+    out_path = _preview_output_path(path)
+    if os.path.exists(out_path):
+        return out_path
+
+    # First try remux (fast, minimal CPU)
+    remux_cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", path,
+        "-map", "0:v:0", "-map", "0:a:0?",
+        "-c", "copy",
+        "-movflags", "+faststart",
+        out_path,
+    ]
+    remux_result = subprocess.run(remux_cmd, capture_output=True, text=True, timeout=600)
+    if remux_result.returncode == 0 and os.path.exists(out_path):
+        return out_path
+
+    # Fallback to transcode for incompatible codecs
+    transcode_cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", path,
+        "-map", "0:v:0", "-map", "0:a:0?",
+        "-c:v", "libx264", "-preset", "veryfast",
+        "-c:a", "aac", "-b:a", "128k",
+        "-movflags", "+faststart",
+        out_path,
+    ]
+    transcode_result = subprocess.run(transcode_cmd, capture_output=True, text=True, timeout=3600)
+    if transcode_result.returncode != 0 or not os.path.exists(out_path):
+        detail = (transcode_result.stderr or remux_result.stderr or "")[-500:]
+        raise HTTPException(500, f"Preview conversion failed: {detail}")
+
+    return out_path
 
 
 def load_config():
@@ -73,13 +174,15 @@ async def index():
 @app.get("/api/sources")
 async def get_sources():
     config = load_config()
+    recordings = _scan_recordings(config.get("sources", []))
+    counts = {}
+    for recording in recordings:
+        label = recording["source"]
+        counts[label] = counts.get(label, 0) + 1
+
     sources = []
     for s in config.get("sources", []):
-        count = 0
-        if os.path.isdir(s["path"]):
-            for root, dirs, files in os.walk(s["path"]):
-                count += sum(1 for f in files if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS)
-        sources.append({"label": s["label"], "path": s["path"], "count": count})
+        sources.append({"label": s["label"], "path": s["path"], "count": counts.get(s["label"], 0)})
     return {"sources": sources}
 
 
@@ -93,6 +196,7 @@ async def add_source(source: SourceModel):
         raise HTTPException(400, f"Directory not found: {source.path}")
     config.setdefault("sources", []).append({"label": source.label, "path": source.path})
     save_config(config)
+    _invalidate_recordings_cache()
     return {"status": "ok"}
 
 
@@ -101,6 +205,7 @@ async def remove_source(label: str):
     config = load_config()
     config["sources"] = [s for s in config.get("sources", []) if s["label"] != label]
     save_config(config)
+    _invalidate_recordings_cache()
     return {"status": "ok"}
 
 
@@ -108,28 +213,9 @@ async def remove_source(label: str):
 @app.get("/api/recordings")
 async def get_recordings(source: Optional[str] = None):
     config = load_config()
-    recordings = []
-    sources_to_scan = config.get("sources", [])
+    recordings = _scan_recordings(config.get("sources", []))
     if source:
-        sources_to_scan = [s for s in sources_to_scan if s["label"] == source]
-
-    for s in sources_to_scan:
-        if not os.path.isdir(s["path"]):
-            continue
-        for root, dirs, files in os.walk(s["path"]):
-            for f in files:
-                if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS:
-                    filepath = os.path.join(root, f)
-                    stat = os.stat(filepath)
-                    recordings.append({
-                        "name": f,
-                        "path": filepath,
-                        "source": s["label"],
-                        "size": stat.st_size,
-                        "modified": stat.st_mtime,
-                    })
-
-    recordings.sort(key=lambda r: r["modified"], reverse=True)
+        recordings = [item for item in recordings if item["source"] == source]
     return {"recordings": recordings}
 
 
@@ -186,22 +272,76 @@ async def get_recording_info(path: str):
     except Exception:
         pass
 
-    return {"audio_tracks": audio_tracks, "path": path}
+    extension = os.path.splitext(path)[1].lower()
+    return {
+        "audio_tracks": audio_tracks,
+        "path": path,
+        "extension": extension,
+        "needs_transcode_preview": extension not in DIRECT_PLAY_EXTENSIONS,
+    }
 
 
 # ── Streaming ─────────────────────────────────────────────────
 @app.get("/stream")
-async def stream_video(path: str):
+async def stream_video(path: str, transcode: bool = False):
     if not os.path.isfile(path):
         raise HTTPException(404, "File not found")
-    return FileResponse(path, media_type="video/mp4")
+
+    extension = os.path.splitext(path)[1].lower()
+    if transcode or extension not in DIRECT_PLAY_EXTENSIONS:
+        preview_path = _build_preview_mp4(path)
+        return FileResponse(preview_path, media_type="video/mp4")
+
+    return FileResponse(path, media_type=_mime_type_for_path(path))
+
+
+@app.post("/api/recordings/remux")
+async def remux_recording(path: str):
+    if not os.path.isfile(path):
+        raise HTTPException(404, "File not found")
+
+    os.makedirs(CLIPS_DIR, exist_ok=True)
+    remux_dir = os.path.join(CLIPS_DIR, "remuxed")
+    os.makedirs(remux_dir, exist_ok=True)
+
+    base_name = os.path.splitext(os.path.basename(path))[0]
+    output_name = f"{base_name}_remux_{int(time.time())}.mp4"
+    output_path = os.path.join(remux_dir, output_name)
+
+    cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", path,
+        "-map", "0:v", "-map", "0:a?",
+        "-c", "copy",
+        "-movflags", "+faststart",
+        output_path,
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+    if result.returncode != 0 or not os.path.exists(output_path):
+        detail = (result.stderr or "")[-500:]
+        raise HTTPException(500, f"Remux failed. Try clip re-encode mode. {detail}")
+
+    try:
+        os.remove(path)
+    except OSError as exc:
+        raise HTTPException(500, f"Remux succeeded but failed to delete source file: {exc}")
+
+    stat = os.stat(output_path)
+    return {
+        "status": "ok",
+        "name": output_name,
+        "path": output_path,
+        "size": stat.st_size,
+        "deleted_source": True,
+    }
 
 
 @app.get("/stream/clip")
 async def stream_clip(path: str):
     if not os.path.isfile(path):
         raise HTTPException(404, "File not found")
-    return FileResponse(path, media_type="video/mp4")
+    return FileResponse(path, media_type=_mime_type_for_path(path))
 
 
 # ── Clips ─────────────────────────────────────────────────────
