@@ -1613,7 +1613,8 @@ async function removeSource(label) {
 async function saveSettings() {
   const autoRefresh = document.getElementById('auto-refresh-check').checked;
   const interval = parseInt(document.getElementById('refresh-interval').value) || 20;
-  await fetch('/api/settings', {
+  const clipsPath = document.getElementById('clips-path').value.trim() || '/app/data/clips';
+  const res = await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval, clips_path: clipsPath }),
