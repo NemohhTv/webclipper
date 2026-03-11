@@ -8,7 +8,7 @@ services:
       WEBCLIPPER_DATA_DIR: /data
     volumes:
       - webclipper_data:/data
-      - /mnt/Recordings:/mnt/Recordings
+      - /volume1/Recordings:/mnt/Recordings
     restart: unless-stopped
 
 volumes:
