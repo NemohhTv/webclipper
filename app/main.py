@@ -28,6 +28,191 @@ DEFAULT_CONFIG = {
 }
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".ts", ".m4v"}
+DIRECT_PLAY_EXTENSIONS = {".mp4", ".webm", ".mov", ".m4v"}
+
+SCAN_CACHE_TTL = 10
+_RECORDINGS_CACHE = {"timestamp": 0.0, "data": []}
+_REMUX_JOBS = {}
+_REMUX_JOBS_LOCK = threading.Lock()
+
+
+def _is_video_file(filename: str) -> bool:
+    return os.path.splitext(filename)[1].lower() in VIDEO_EXTENSIONS
+
+
+def _scan_recordings(sources):
+    now = time.time()
+    if (now - _RECORDINGS_CACHE["timestamp"]) < SCAN_CACHE_TTL:
+        return _RECORDINGS_CACHE["data"]
+
+    recordings = []
+    for source in sources:
+        source_path = source.get("path", "")
+        if not os.path.isdir(source_path):
+            continue
+
+        for root, _, files in os.walk(source_path):
+            for filename in files:
+                if not _is_video_file(filename):
+                    continue
+
+                filepath = os.path.join(root, filename)
+                try:
+                    stat = os.stat(filepath)
+                except OSError:
+                    continue
+
+                recordings.append({
+                    "name": filename,
+                    "path": filepath,
+                    "source": source["label"],
+                    "size": stat.st_size,
+                    "modified": stat.st_mtime,
+                })
+
+    recordings.sort(key=lambda item: item["modified"], reverse=True)
+    _RECORDINGS_CACHE["timestamp"] = now
+    _RECORDINGS_CACHE["data"] = recordings
+    return recordings
+
+
+def _clean_sources(config):
+    cleaned = []
+    for source in config.get("sources", []):
+        if not isinstance(source, dict):
+            continue
+        label = str(source.get("label", "")).strip()
+        path = str(source.get("path", "")).strip()
+        if not label or not path:
+            continue
+        cleaned.append({"label": label, "path": path})
+    return cleaned
+
+
+def _invalidate_recordings_cache():
+    _RECORDINGS_CACHE["timestamp"] = 0.0
+    _RECORDINGS_CACHE["data"] = []
+
+
+def _mime_type_for_path(path: str) -> str:
+    guessed, _ = mimetypes.guess_type(path)
+    return guessed or "application/octet-stream"
+
+
+def _get_clips_dir(config=None) -> str:
+    cfg = config or load_config()
+    clips_path = cfg.get("clips_path") or CLIPS_DIR
+    resolved = os.path.abspath(clips_path)
+    os.makedirs(resolved, exist_ok=True)
+    return resolved
+
+
+def _update_remux_job(job_id: str, **updates):
+    with _REMUX_JOBS_LOCK:
+        job = _REMUX_JOBS.get(job_id)
+        if not job:
+            return
+        job.update(updates)
+
+
+def _run_remux_job(job_id: str):
+    with _REMUX_JOBS_LOCK:
+        job = _REMUX_JOBS.get(job_id)
+    if not job:
+        return
+
+    source_path = job["source_path"]
+    output_path = job["output_path"]
+
+    cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", source_path,
+        "-map", "0:v", "-map", "0:a?",
+        "-c", "copy",
+        "-movflags", "+faststart",
+        output_path,
+    ]
+
+    _update_remux_job(job_id, status="running", started_at=int(time.time()))
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+        if result.returncode != 0 or not os.path.exists(output_path):
+            detail = (result.stderr or "")[-500:]
+            _update_remux_job(job_id, status="failed", error=f"Remux failed. {detail}", finished_at=int(time.time()))
+            return
+
+        try:
+            os.remove(source_path)
+        except OSError as exc:
+            _update_remux_job(
+                job_id,
+                status="failed",
+                error=f"Remux succeeded but failed to delete source file: {exc}",
+                finished_at=int(time.time()),
+            )
+            return
+
+        stat = os.stat(output_path)
+        _update_remux_job(
+            job_id,
+            status="completed",
+            finished_at=int(time.time()),
+            result={
+                "name": os.path.basename(output_path),
+                "path": output_path,
+                "size": stat.st_size,
+                "deleted_source": True,
+            },
+        )
+        _invalidate_recordings_cache()
+    except Exception as exc:
+        _update_remux_job(job_id, status="failed", error=f"Remux failed: {exc}", finished_at=int(time.time()))
+
+
+def _preview_output_path(path: str) -> str:
+    os.makedirs(PREVIEW_DIR, exist_ok=True)
+    stat = os.stat(path)
+    cache_key = f"{path}:{stat.st_mtime_ns}:{stat.st_size}"
+    import hashlib
+    filename = hashlib.md5(cache_key.encode()).hexdigest() + ".mp4"
+    return os.path.join(PREVIEW_DIR, filename)
+
+
+def _build_preview_mp4(path: str) -> str:
+    out_path = _preview_output_path(path)
+    if os.path.exists(out_path):
+        return out_path
+
+    # First try remux (fast, minimal CPU)
+    remux_cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", path,
+        "-map", "0:v:0", "-map", "0:a:0?",
+        "-c", "copy",
+        "-movflags", "+faststart",
+        out_path,
+    ]
+    remux_result = subprocess.run(remux_cmd, capture_output=True, text=True, timeout=600)
+    if remux_result.returncode == 0 and os.path.exists(out_path):
+        return out_path
+
+    # Fallback to transcode for incompatible codecs
+    transcode_cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", path,
+        "-map", "0:v:0", "-map", "0:a:0?",
+        "-c:v", "libx264", "-preset", "veryfast",
+        "-c:a", "aac", "-b:a", "128k",
+        "-movflags", "+faststart",
+        out_path,
+    ]
+    transcode_result = subprocess.run(transcode_cmd, capture_output=True, text=True, timeout=3600)
+    if transcode_result.returncode != 0 or not os.path.exists(out_path):
+        detail = (transcode_result.stderr or remux_result.stderr or "")[-500:]
+        raise HTTPException(500, f"Preview conversion failed: {detail}")
+
+    return out_path
 
 
 def load_config():
@@ -83,14 +268,15 @@ async def index():
 @app.get("/api/sources")
 async def get_sources():
     config = load_config()
-    recordings = _scan_recordings(config.get("sources", []))
+    sources_cfg = _clean_sources(config)
+    recordings = _scan_recordings(sources_cfg)
     counts = {}
     for recording in recordings:
         label = recording["source"]
         counts[label] = counts.get(label, 0) + 1
 
     sources = []
-    for s in config.get("sources", []):
+    for s in sources_cfg:
         sources.append({"label": s["label"], "path": s["path"], "count": counts.get(s["label"], 0)})
     return {"sources": sources}
 
@@ -98,12 +284,14 @@ async def get_sources():
 @app.post("/api/sources")
 async def add_source(source: SourceModel):
     config = load_config()
-    for s in config.get("sources", []):
+    existing_sources = _clean_sources(config)
+    for s in existing_sources:
         if s["label"] == source.label:
             raise HTTPException(400, f'Source "{source.label}" already exists')
     if not os.path.isdir(source.path):
         raise HTTPException(400, f"Directory not found: {source.path}")
-    config.setdefault("sources", []).append({"label": source.label, "path": source.path})
+    existing_sources.append({"label": source.label, "path": source.path})
+    config["sources"] = existing_sources
     save_config(config)
     _invalidate_recordings_cache()
     return {"status": "ok"}
@@ -112,7 +300,7 @@ async def add_source(source: SourceModel):
 @app.delete("/api/sources/{label}")
 async def remove_source(label: str):
     config = load_config()
-    config["sources"] = [s for s in config.get("sources", []) if s["label"] != label]
+    config["sources"] = [s for s in _clean_sources(config) if s.get("label") != label]
     save_config(config)
     _invalidate_recordings_cache()
     return {"status": "ok"}
@@ -122,7 +310,7 @@ async def remove_source(label: str):
 @app.get("/api/recordings")
 async def get_recordings(source: Optional[str] = None):
     config = load_config()
-    recordings = _scan_recordings(config.get("sources", []))
+    recordings = _scan_recordings(_clean_sources(config))
     if source:
         recordings = [item for item in recordings if item["source"] == source]
     return {"recordings": recordings}
@@ -239,7 +427,43 @@ async def stream_video(path: str, transcode: bool = False):
 async def remux_recording(path: str):
     if not os.path.isfile(path):
         raise HTTPException(404, "File not found")
-    return FileResponse(path, media_type="video/mp4")
+
+    base_name = os.path.splitext(os.path.basename(path))[0]
+    output_name = f"{base_name}_remux_{int(time.time())}.mp4"
+    output_path = os.path.join(os.path.dirname(path), output_name)
+    job_id = uuid.uuid4().hex
+
+    with _REMUX_JOBS_LOCK:
+        _REMUX_JOBS[job_id] = {
+            "job_id": job_id,
+            "status": "queued",
+            "source_path": path,
+            "output_path": output_path,
+            "created_at": int(time.time()),
+            "started_at": None,
+            "finished_at": None,
+            "error": None,
+            "result": None,
+        }
+
+    worker = threading.Thread(target=_run_remux_job, args=(job_id,), daemon=True)
+    worker.start()
+
+    return {
+        "status": "queued",
+        "job_id": job_id,
+        "source_path": path,
+        "output_path": output_path,
+    }
+
+
+@app.get("/api/recordings/remux/status")
+async def remux_status(job_id: str):
+    with _REMUX_JOBS_LOCK:
+        job = _REMUX_JOBS.get(job_id)
+        if not job:
+            raise HTTPException(404, "Remux job not found")
+        return job
 
 
 @app.get("/stream/clip")
