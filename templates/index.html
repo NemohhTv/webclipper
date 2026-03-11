@@ -814,11 +814,6 @@ body {
       <div class="nav-item" data-page="clips" onclick="navigateTo('clips')">
         Clips <span class="count" id="clips-count">0</span>
       </div>
-      <div class="nav-sub">
-        <div class="nav-item" data-page="collections" onclick="navigateTo('collections')">
-          Collections <span class="count">0</span>
-        </div>
-      </div>
     </div>
     <div class="nav-divider"></div>
     <div class="nav-section">
@@ -841,6 +836,7 @@ body {
         <option value="">All Sources</option>
       </select>
       <input type="text" placeholder="Search..." id="search-input" oninput="filterRecordings()">
+      <button class="topbar-btn" id="delete-selected-btn" onclick="deleteSelectedRecordings()" style="display:none">Delete Selected</button>
       <button class="topbar-btn" onclick="loadRecordings()">Reload</button>
     </div>
     <div class="recordings-grid" id="recordings-grid"></div>
@@ -854,12 +850,6 @@ body {
       <input type="text" placeholder="Search..." id="clips-search" oninput="filterClips()">
     </div>
     <div class="clips-grid" id="clips-grid"></div>
-  </div>
-
-  <!-- ── Collections Page ─────────────────────────────────── -->
-  <div class="page" id="page-collections">
-    <div class="topbar"><h1>Collections</h1></div>
-    <div class="empty-msg">Collections coming soon. Organize your clips into groups.</div>
   </div>
 
   <!-- ── Settings Page ────────────────────────────────────── -->
@@ -893,6 +883,11 @@ body {
         <p style="margin-top:8px;font-size:13px">Enabled</p>
         <label>Refresh interval (seconds)</label>
         <input type="number" id="refresh-interval" value="20" min="5" max="300">
+        <label>Clips save folder</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="clips-path" placeholder="/app/data/clips" style="flex:1">
+          <button class="add-btn" onclick="openFolderBrowser('clips-path')" style="margin-top:0;white-space:nowrap">Browse</button>
+        </div>
         <button class="save-btn" onclick="saveSettings()">Save</button>
         <p style="margin-top:8px;font-size:11px;color:var(--text-dim)">Note: 20 seconds is usually fine. It only lists file names and metadata, it does not copy files.</p>
       </div>
@@ -988,6 +983,11 @@ body {
         </label>
       </div>
 
+      <button class="create-clip-btn" id="remux-btn" onclick="remuxCurrentRecording()" style="margin-top:10px;background:#1f66b8">
+        Remux to MP4 (fast, no re-encode)
+      </button>
+      <p id="remux-help" style="margin-top:6px;font-size:11px;color:var(--text-dim)"></p>
+
       <button class="create-clip-btn" id="create-clip-btn" onclick="createClip()">Create Clip</button>
     </div>
   </div>
@@ -1019,6 +1019,7 @@ body {
 let currentPage = 'recordings';
 let sources = [];
 let allRecordings = [];
+let selectedRecordings = new Set();
 let currentSourceFilter = '';
 let editorFile = null;
 let editorDuration = 0;
@@ -1083,10 +1084,24 @@ function fmtSize(bytes) {
   return (bytes / 1073741824).toFixed(1) + ' GB';
 }
 
+async function parseApiResponse(res) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text };
+  }
+}
+
 // ── Sources ─────────────────────────────────────────────────
 async function loadSources() {
   const res = await fetch('/api/sources');
-  const data = await res.json();
+  const data = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(data.detail || `Failed to load sources (${res.status})`, 'error');
+    return;
+  }
   sources = data.sources;
 
   const nav = document.getElementById('source-nav');
@@ -1120,7 +1135,11 @@ async function loadRecordings() {
   const source = document.getElementById('source-filter').value;
   const url = source ? `/api/recordings?source=${encodeURIComponent(source)}` : '/api/recordings';
   const res = await fetch(url);
-  const data = await res.json();
+  const data = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(data.detail || `Failed to load recordings (${res.status})`, 'error');
+    return;
+  }
   allRecordings = data.recordings;
   renderRecordings(allRecordings);
   loadSources();
@@ -1130,6 +1149,16 @@ function filterRecordings() {
   const q = document.getElementById('search-input').value.toLowerCase();
   const filtered = allRecordings.filter(r => r.name.toLowerCase().includes(q));
   renderRecordings(filtered);
+}
+
+function updateSelectedRecordingsUi() {
+  const btn = document.getElementById('delete-selected-btn');
+  if (selectedRecordings.size > 0) {
+    btn.style.display = '';
+    btn.textContent = `Delete Selected (${selectedRecordings.size})`;
+  } else {
+    btn.style.display = 'none';
+  }
 }
 
 function renderRecordings(recs) {
@@ -1143,8 +1172,12 @@ function renderRecordings(recs) {
     const card = document.createElement('div');
     card.className = 'rec-card';
     card.onclick = () => openEditor(r);
+    const checked = selectedRecordings.has(r.path) ? 'checked' : '';
     const thumbUrl = `/api/recordings/thumbnail?path=${encodeURIComponent(r.path)}&time=1`;
     card.innerHTML = `
+      <input type="checkbox" class="card-select" ${checked}
+             onclick="event.stopPropagation()"
+             onchange="toggleRecordingSelection('${r.path.replace(/'/g, "\\'")}')">
       <img class="thumb" src="${thumbUrl}" loading="lazy"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">
       <div class="thumb-placeholder" style="display:none">&#9654;</div>
@@ -1158,6 +1191,43 @@ function renderRecordings(recs) {
     `;
     grid.appendChild(card);
   });
+  updateSelectedRecordingsUi();
+}
+
+function toggleRecordingSelection(path) {
+  if (selectedRecordings.has(path)) selectedRecordings.delete(path);
+  else selectedRecordings.add(path);
+  updateSelectedRecordingsUi();
+}
+
+async function deleteSelectedRecordings() {
+  const paths = Array.from(selectedRecordings);
+  if (!paths.length) return;
+  if (!confirm(`Delete ${paths.length} selected recording(s)?`)) return;
+
+  try {
+    const res = await fetch('/api/recordings/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(`Delete failed: ${data.detail || 'Unknown error'}`, 'error');
+      return;
+    }
+
+    selectedRecordings.clear();
+    const failedCount = (data.failed || []).length;
+    if (failedCount) {
+      toast(`Deleted ${data.deleted}, failed ${failedCount}`, 'error');
+    } else {
+      toast(`Deleted ${data.deleted} recording(s)`, 'success');
+    }
+    await loadRecordings();
+  } catch (e) {
+    toast(`Delete failed: ${e.message}`, 'error');
+  }
 }
 
 // ── Editor ──────────────────────────────────────────────────
@@ -1168,8 +1238,21 @@ async function openEditor(rec) {
   document.getElementById('clip-title').value = rec.name.replace(/\.[^.]+$/, '');
   document.getElementById('editor-overlay').classList.add('visible');
 
-  video.src = `/stream?path=${encodeURIComponent(rec.path)}`;
+  const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
+  const info = await infoRes.json();
+  audioTracks = info.audio_tracks || [];
+  renderAudioTracks();
+
+  const transcode = info.needs_transcode_preview ? '&transcode=1' : '';
+  video.src = `/stream?path=${encodeURIComponent(rec.path)}${transcode}`;
   video.load();
+
+  const remuxHelp = document.getElementById('remux-help');
+  if (info.extension === '.mkv' || info.needs_transcode_preview) {
+    remuxHelp.textContent = 'This format may not preview reliably in Firefox. Remux creates an MP4 in this same folder and removes the source after success.';
+  } else {
+    remuxHelp.textContent = 'Remux creates an MP4 in this same folder quickly without re-encoding (if codecs are MP4-compatible).';
+  }
 
   video.onloadedmetadata = () => {
     editorDuration = video.duration;
@@ -1181,11 +1264,6 @@ async function openEditor(rec) {
     updateTrimUI();
     updatePlayerTime();
   };
-
-  const infoRes = await fetch(`/api/recordings/info?path=${encodeURIComponent(rec.path)}`);
-  const info = await infoRes.json();
-  audioTracks = info.audio_tracks || [];
-  renderAudioTracks();
 }
 
 function closeEditor() {
@@ -1362,6 +1440,61 @@ async function createClip() {
   btn.textContent = 'Create Clip';
 }
 
+async function remuxCurrentRecording() {
+  if (!editorFile) return;
+  const btn = document.getElementById('remux-btn');
+  btn.disabled = true;
+  btn.textContent = 'Remuxing...';
+
+  try {
+    const res = await fetch(`/api/recordings/remux?path=${encodeURIComponent(editorFile.path)}`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(`Remux failed: ${data.detail || 'Unknown error'}`, 'error');
+      return;
+    }
+
+    const statusEl = document.getElementById('remux-help');
+    statusEl.textContent = 'Remux queued. You can stay here and watch status update...';
+
+    const jobId = data.job_id;
+    let done = false;
+    while (!done) {
+      await new Promise(r => setTimeout(r, 1200));
+      const stRes = await fetch(`/api/recordings/remux/status?job_id=${encodeURIComponent(jobId)}`);
+      const st = await stRes.json();
+
+      if (!stRes.ok) {
+        toast(`Remux status failed: ${st.detail || 'Unknown error'}`, 'error');
+        break;
+      }
+
+      if (st.status === 'queued') {
+        statusEl.textContent = 'Remux queued...';
+      } else if (st.status === 'running') {
+        statusEl.textContent = 'Remux running...';
+      } else if (st.status === 'completed') {
+        const result = st.result || {};
+        toast(`Remux complete: ${result.name || 'output.mp4'} (${fmtSize(result.size || 0)}). Original file deleted.`, 'success');
+        statusEl.textContent = `Saved to: ${result.path || data.output_path}`;
+        await loadClips();
+        closeEditor();
+        await loadRecordings();
+        done = true;
+      } else if (st.status === 'failed') {
+        toast(`Remux failed: ${st.error || 'Unknown error'}`, 'error');
+        statusEl.textContent = `Remux failed: ${st.error || 'Unknown error'}`;
+        done = true;
+      }
+    }
+  } catch (e) {
+    toast(`Remux failed: ${e.message}`, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Remux to MP4 (fast, no re-encode)';
+}
+
 // ── Clips Page ──────────────────────────────────────────────
 let allClips = [];
 async function loadClips() {
@@ -1417,9 +1550,14 @@ async function deleteClip(path) {
 // ── Settings ────────────────────────────────────────────────
 async function loadSettings() {
   const res = await fetch('/api/settings');
-  const config = await res.json();
+  const config = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(config.detail || `Failed to load settings (${res.status})`, 'error');
+    return;
+  }
   document.getElementById('auto-refresh-check').checked = config.auto_refresh;
   document.getElementById('refresh-interval').value = config.refresh_interval;
+  document.getElementById('clips-path').value = config.clips_path || '/app/data/clips';
   renderSourcesList(config.sources);
 }
 
@@ -1451,6 +1589,7 @@ async function addSource() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ label, path }),
     });
+    const data = await parseApiResponse(res);
     if (res.ok) {
       toast(`Source "${label}" added`, 'success');
       document.getElementById('new-source-label').value = '';
@@ -1458,7 +1597,6 @@ async function addSource() {
       loadSettings();
       loadSources();
     } else {
-      const data = await res.json();
       toast(data.detail, 'error');
     }
   } catch (e) { toast(e.message, 'error'); }
@@ -1475,12 +1613,19 @@ async function removeSource(label) {
 async function saveSettings() {
   const autoRefresh = document.getElementById('auto-refresh-check').checked;
   const interval = parseInt(document.getElementById('refresh-interval').value) || 20;
-  await fetch('/api/settings', {
+  const clipsPath = document.getElementById('clips-path').value.trim() || '/app/data/clips';
+  const res = await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval }),
+    body: JSON.stringify({ auto_refresh: autoRefresh, refresh_interval: interval, clips_path: clipsPath }),
   });
+  const data = await parseApiResponse(res);
+  if (!res.ok) {
+    toast(data.detail || `Failed to save settings (${res.status})`, 'error');
+    return;
+  }
   toast('Settings saved', 'success');
+  await loadClips();
   setupAutoRefresh();
 }
 
