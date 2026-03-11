@@ -6,8 +6,9 @@ services:
       - "8765:8765"
     volumes:
       - webclipper-data:/data
-      # Mount your recordings folder (use your host path)
-      - /path/to/your/recordings:/mnt/recordings
+      # Mount your NAS recordings root so /mnt/recordings shows Elgato, Medal, etc.
+      # Example: /volume1/Recordings -> then in app use /mnt/recordings/Medal/Clips, /mnt/recordings/Elgato, etc.
+      - /volume1/Recordings:/mnt/recordings
     environment:
       - WEBCLIPPER_DATA=/data
 

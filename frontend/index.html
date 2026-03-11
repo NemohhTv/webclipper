@@ -273,6 +273,15 @@
       height: 100%;
       display: block;
     }
+    .editor-preview-message {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 12px;
+      color: var(--text-muted);
+    }
+    .editor-preview-message p { margin: 0 0 12px 0; }
     .editor-timeline {
       display: flex;
       align-items: center;
@@ -376,6 +385,13 @@
     }
     .browser-list li:hover { background: var(--bg-elevated); }
     .browser-list .parent { color: var(--accent); }
+    .browser-list .browser-message {
+      cursor: default;
+      color: var(--text-muted);
+      font-size: 0.9em;
+      padding: 12px;
+    }
+    .browser-list .browser-message:hover { background: transparent; }
 
     /* Empty state */
     .empty-state {
@@ -471,6 +487,10 @@
       <div class="modal-body">
         <div class="editor-layout">
           <div class="editor-video-section">
+            <div id="editor-preview-unavailable" class="editor-preview-message" style="display:none;">
+              <p>Preview not ready. MKV files are played from cache (remux/transcode). Remux this file first, or wait a moment and open the editor again.</p>
+              <button type="button" class="btn btn-ghost" id="editor-remux-this">Remux this file</button>
+            </div>
             <div class="editor-video-wrap">
               <video id="editor-video" controls></video>
             </div>
@@ -740,9 +760,16 @@
 
       const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
       const video = document.getElementById('editor-video');
+      const msgEl = document.getElementById('editor-preview-unavailable');
+      const isMkv = (path || '').toLowerCase().endsWith('.mkv');
       if (preview.url) {
+        msgEl.style.display = 'none';
         video.src = preview.url;
+      } else if (isMkv) {
+        msgEl.style.display = 'block';
+        video.src = '';
       } else {
+        msgEl.style.display = 'none';
         video.src = API + '/stream/recording?path=' + encodeURIComponent(path);
       }
 
@@ -817,6 +844,12 @@
 
     document.getElementById('editor-close').addEventListener('click', () => {
       document.getElementById('editor-modal').classList.remove('open');
+    });
+    document.getElementById('editor-remux-this').addEventListener('click', () => {
+      if (!currentEditorRecording || !currentEditorRecording.path) return;
+      remuxPaths([currentEditorRecording.path]);
+      document.getElementById('editor-preview-unavailable').style.display = 'none';
+      alert('Remux job started. When it finishes, open this file again to use the preview.');
     });
     document.getElementById('editor-modal').addEventListener('click', e => {
       if (e.target.id === 'editor-modal') document.getElementById('editor-modal').classList.remove('open');
@@ -926,11 +959,15 @@
       document.getElementById('refresh-interval').value = set.refresh_interval_seconds || 60;
     }
 
-    document.getElementById('add-source-btn').addEventListener('click', () => openFolderBrowser('/', (path) => {
+    document.getElementById('add-source-btn').addEventListener('click', () => openFolderBrowser('/', async (path) => {
       const label = path.split('/').filter(Boolean).pop() || 'Source';
-      fetch(API + '/sources', { method: 'POST', body: JSON.stringify({ label, path }) })
-        .then(() => loadSettings())
-        .then(() => loadRecordings());
+      try {
+        await fetchJSON(API + '/sources', { method: 'POST', body: JSON.stringify({ label, path }) });
+        await loadSettings();
+        loadRecordings();
+      } catch (err) {
+        alert('Failed to add source: ' + (err.message || err));
+      }
     }));
 
     document.getElementById('browse-clips-folder').addEventListener('click', () => {
@@ -959,7 +996,14 @@
 
     async function loadBrowserEntries() {
       document.getElementById('browser-current-path').textContent = browserCurrentPath;
-      const data = await fetchJSON(API + '/browse', { method: 'POST', body: JSON.stringify({ path: browserCurrentPath }) });
+      let data;
+      try {
+        data = await fetchJSON(API + '/browse', { method: 'POST', body: JSON.stringify({ path: browserCurrentPath }) });
+      } catch (err) {
+        const list = document.getElementById('browser-list');
+        list.innerHTML = '<li class="browser-message">Could not load folder. Check that the path exists and the recordings volume is mounted in Docker.</li>';
+        return;
+      }
       const list = document.getElementById('browser-list');
       const entries = [];
       if (data.parent) {
@@ -968,6 +1012,11 @@
       (data.entries || []).forEach(e => {
         entries.push(`<li data-path="${escapeHtml(e.path)}" data-dir="true">📁 ${escapeHtml(e.name)}</li>`);
       });
+      if (entries.length === 0 && !data.parent) {
+        entries.push('<li class="browser-message">No subfolders here. Add a source by selecting a folder that contains your recordings (e.g. /mnt/recordings/Medal/Clips).</li>');
+      } else if (entries.length === 1 && data.parent) {
+        entries.push('<li class="browser-message">No subfolders in this directory. If you expected folders (e.g. Elgato, Medal), check the stack volume mount: host path should be your recordings root (e.g. /volume1/Recordings).</li>');
+      }
       list.innerHTML = entries.join('');
       list.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', () => {
@@ -983,9 +1032,14 @@
       });
     }
 
-    document.getElementById('browser-select').addEventListener('click', () => {
-      if (browserCallback) browserCallback(browserCurrentPath);
+    document.getElementById('browser-select').addEventListener('click', async () => {
+      if (!browserCallback) return;
       document.getElementById('browser-modal').classList.remove('open');
+      try {
+        await browserCallback(browserCurrentPath);
+      } catch (err) {
+        alert(err.message || 'Something went wrong.');
+      }
     });
     document.getElementById('browser-close').addEventListener('click', () => {
       document.getElementById('browser-modal').classList.remove('open');

@@ -162,25 +162,37 @@ def build_preview_transcode(source_path: str, out_path: str | Path) -> bool:
 
 def ensure_preview(source_path: str) -> tuple[str | None, str]:
     """
-    Ensure a browser-playable preview exists. Returns (url_path_or_none, strategy).
+    Ensure a browser-playable preview exists (cached for smooth playback).
+    Returns (url_path_or_none, strategy).
     strategy: direct | remux | transcode.
+    MKV and other non-browser formats are always served from cache (remux or transcode); never raw.
     """
     from app.config import PREVIEW_DIR
     info = get_file_info(source_path)
     if info.get("error"):
         return None, "error"
+    ext = Path(source_path).suffix.lower()
+    is_mkv = ext == ".mkv"
     safe, reason = is_browser_safe(source_path, info)
     cache_path = preview_path_for_file(source_path)
-    if safe and reason == "direct":
+
+    # Only use direct for browser-safe files; never stream MKV or other formats raw
+    if safe and reason == "direct" and not is_mkv:
         return source_path, "direct"
+
+    # Use cache if it exists and source isn't newer
     if cache_path.exists():
-        # Check if source is newer
         try:
             if Path(source_path).stat().st_mtime <= cache_path.stat().st_mtime:
-                return str(cache_path), "remux" if "remux" in str(cache_path) else "transcode"
+                return str(cache_path), "cached"
         except OSError:
             pass
-    if not safe:
+
+    # Build cache: for MKV try fast remux first, then transcode; for others try remux then transcode
+    if is_mkv or not safe:
+        ok = build_preview_direct_remux(source_path, cache_path)
+        if ok:
+            return str(cache_path), "remux"
         ok = build_preview_transcode(source_path, cache_path)
         if ok:
             return str(cache_path), "transcode"
