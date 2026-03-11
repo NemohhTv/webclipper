@@ -13,9 +13,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY app ./app
+COPY templates ./templates
 
-RUN mkdir -p /data/clips /data/thumbnails /data/preview
+RUN mkdir -p /data /data/clips /data/thumbnails /data/preview
 
 EXPOSE 9069
 
