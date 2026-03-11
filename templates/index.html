@@ -385,6 +385,7 @@
       align-items: center;
       justify-content: center;
       min-height: 0;
+      position: relative;
     }
 
     .editor-video-wrap video {
@@ -392,6 +393,21 @@
       height: 100%;
       object-fit: contain;
       background: #000;
+    }
+
+    .editor-loading {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.45);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .editor-loading.show {
+      display: flex;
     }
 
     .editor-controls {
@@ -412,11 +428,6 @@
       display: grid;
       gap: 8px;
       margin-bottom: 10px;
-    }
-
-    .timeline-row {
-      display: grid;
-      gap: 8px;
     }
 
     .timeline-meta {
@@ -631,12 +642,14 @@
           <div class="editor-file">
             <div id="editorFileName" class="title">Preview</div>
             <div id="editorFilePath" class="meta"></div>
+            <div id="editorStatus" class="tiny"></div>
           </div>
           <button id="closeEditorBtn" style="width:auto;">Close</button>
         </div>
 
         <div class="editor-video-wrap">
           <video id="editorVideo" controls preload="metadata"></video>
+          <div id="editorLoading" class="editor-loading">Preparing preview...</div>
         </div>
 
         <div class="editor-controls">
@@ -685,7 +698,7 @@
       <aside class="editor-sidebar">
         <h3 style="margin-bottom:10px;">Clip Output</h3>
         <div class="muted" style="margin-bottom:16px;">
-          Fast Cut / Remux uses stream copy. Accurate Clip re-encodes and enables true audio mixing.
+          Fast Cut / Remux is stream copy. Accurate Clip re-encodes and is required for true audio mixing.
         </div>
 
         <div class="field">
@@ -753,6 +766,7 @@
       currentDuration: 0,
       audioTracks: [],
       audioGains: {},
+      editorReady: false,
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1213,11 +1227,54 @@
         .map((el) => Number(el.getAttribute("data-audio-check")));
     }
 
+    function setEditorLoading(show, message = "Preparing preview...") {
+      $("editorLoading").classList.toggle("show", show);
+      $("editorLoading").textContent = message;
+    }
+
+    async function waitForVideoMetadata(video) {
+      return new Promise((resolve, reject) => {
+        let done = false;
+
+        const cleanup = () => {
+          video.removeEventListener("loadedmetadata", onLoaded);
+          video.removeEventListener("error", onError);
+        };
+
+        const onLoaded = () => {
+          if (done) return;
+          done = true;
+          cleanup();
+          resolve();
+        };
+
+        const onError = () => {
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error("Preview failed to load"));
+        };
+
+        video.addEventListener("loadedmetadata", onLoaded);
+        video.addEventListener("error", onError);
+
+        setTimeout(() => {
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error("Preview timed out"));
+        }, 60000);
+      });
+    }
+
     async function openEditor(rec) {
       state.currentRecording = rec;
+      state.editorReady = false;
+
       $("editorModal").classList.add("show");
       $("editorFileName").textContent = rec.name;
       $("editorFilePath").textContent = rec.path;
+      $("editorStatus").textContent = "Reading media info...";
       $("clipTitle").value = rec.name.replace(/\.[^.]+$/, "");
       $("clipGame").value = "Unknown";
       $("clipMode").value = "copy";
@@ -1235,19 +1292,53 @@
       syncTimeUi();
       renderAudioTracks(state.audioTracks);
 
-      const url = `/stream?path=${encodeURIComponent(rec.path)}&transcode=${info.needs_transcode_preview ? "true" : "false"}`;
-      const video = $("editorVideo");
-      video.src = url;
-      video.load();
-      updateSeekUi();
-    }
+      $("durationLabel").textContent = fmtTime(state.currentDuration);
+      $("currentTimeLabel").textContent = "0:00";
+      $("seekSlider").value = 0;
 
-    function closeEditor() {
-      $("editorModal").classList.remove("show");
       const video = $("editorVideo");
       video.pause();
       video.removeAttribute("src");
       video.load();
+
+      setEditorLoading(true, "Preparing preview...");
+      $("editorStatus").textContent = `Preview strategy: ${info.preview_strategy}`;
+
+      try {
+        const preview = await api(`/api/recordings/preview?path=${encodeURIComponent(rec.path)}`);
+        $("editorStatus").textContent = `Preview strategy: ${preview.strategy}`;
+        video.src = preview.url;
+        video.load();
+        await waitForVideoMetadata(video);
+
+        if (Number.isFinite(video.duration) && video.duration > 0) {
+          state.currentDuration = Number(video.duration);
+          $("startSlider").max = state.currentDuration;
+          $("endSlider").max = state.currentDuration;
+          if (Number($("endSlider").value || 0) === 0) {
+            $("endSlider").value = state.currentDuration;
+          }
+          syncTimeUi();
+        }
+
+        updateSeekUi();
+        state.editorReady = true;
+      } catch (err) {
+        $("editorStatus").textContent = err.message;
+        showStatus(err.message, "error");
+      } finally {
+        setEditorLoading(false);
+      }
+    }
+
+    function closeEditor() {
+      $("editorModal").classList.remove("show");
+      state.editorReady = false;
+      const video = $("editorVideo");
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      $("editorStatus").textContent = "";
     }
 
     async function createClip() {
@@ -1402,9 +1493,7 @@
       });
 
       $("editorVideo").addEventListener("timeupdate", updateSeekUi);
-      $("editorVideo").addEventListener("loadedmetadata", () => {
-        updateSeekUi();
-      });
+      $("editorVideo").addEventListener("loadedmetadata", updateSeekUi);
 
       $("createClipBtn").addEventListener("click", async () => {
         try {
