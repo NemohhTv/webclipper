@@ -2,24 +2,17 @@ import hashlib
 import json
 import mimetypes
 import os
-import shutil
 import subprocess
 import tempfile
 import time
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-
 app = FastAPI(title="WebClipper")
-
-
-# -----------------------------------------------------------------------------
-# Paths / Config
-# -----------------------------------------------------------------------------
 
 DATA_DIR = os.getenv("WEBCLIPPER_DATA_DIR", "/data")
 CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
@@ -232,10 +225,6 @@ def build_thumbnail(path: str, second: float = 1.0) -> str:
     return out_path
 
 
-# -----------------------------------------------------------------------------
-# Models
-# -----------------------------------------------------------------------------
-
 class SourceModel(BaseModel):
     label: str = Field(..., min_length=1)
     path: str = Field(..., min_length=1)
@@ -265,10 +254,6 @@ class DeleteClipsRequest(BaseModel):
     paths: List[str]
 
 
-# -----------------------------------------------------------------------------
-# Error Handling
-# -----------------------------------------------------------------------------
-
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_: Request, exc: HTTPException):
     return JSONResponse(
@@ -285,20 +270,12 @@ async def unhandled_exception_handler(_: Request, exc: Exception):
     )
 
 
-# -----------------------------------------------------------------------------
-# Frontend
-# -----------------------------------------------------------------------------
-
 @app.get("/", response_class=HTMLResponse)
 async def index():
     template_path = os.path.join(os.path.dirname(__file__), "..", "templates", "index.html")
     with open(template_path, "r", encoding="utf-8") as f:
         return f.read()
 
-
-# -----------------------------------------------------------------------------
-# Sources
-# -----------------------------------------------------------------------------
 
 @app.get("/api/sources")
 async def get_sources():
@@ -360,10 +337,6 @@ async def remove_source(label: str):
     save_config(config)
     return {"status": "ok"}
 
-
-# -----------------------------------------------------------------------------
-# Recordings
-# -----------------------------------------------------------------------------
 
 @app.get("/api/recordings")
 async def get_recordings(source: Optional[str] = None):
@@ -433,10 +406,6 @@ async def get_thumbnail(path: str, time: float = 1.0):
     return FileResponse(thumb_path, media_type="image/jpeg")
 
 
-# -----------------------------------------------------------------------------
-# Streaming
-# -----------------------------------------------------------------------------
-
 @app.get("/stream")
 async def stream_video(path: str, transcode: bool = False):
     if not os.path.isfile(path):
@@ -456,10 +425,6 @@ async def stream_clip(path: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path, media_type=mime_type_for_path(path))
 
-
-# -----------------------------------------------------------------------------
-# Clips
-# -----------------------------------------------------------------------------
 
 @app.post("/api/clip")
 async def create_clip(req: ClipRequest):
@@ -616,10 +581,6 @@ async def download_clip(path: str):
     return FileResponse(path, filename=os.path.basename(path), media_type="application/octet-stream")
 
 
-# -----------------------------------------------------------------------------
-# Settings
-# -----------------------------------------------------------------------------
-
 @app.get("/api/settings")
 async def get_settings():
     config = load_config()
@@ -643,10 +604,6 @@ async def update_settings(settings: SettingsModel):
 
     return {"status": "ok"}
 
-
-# -----------------------------------------------------------------------------
-# Folder Browser
-# -----------------------------------------------------------------------------
 
 @app.get("/api/browse")
 async def browse_directory(path: str = "/"):
