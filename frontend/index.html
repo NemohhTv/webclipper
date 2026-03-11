@@ -189,6 +189,23 @@
       font-size: 12px;
       color: #0a0c10;
     }
+    .card-thumb-play {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.4);
+      border: none;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      color: #fff;
+      font-size: 48px;
+      z-index: 2;
+    }
+    .card-thumb:hover .card-thumb-play { opacity: 1; }
+    .card-thumb-play:hover { background: rgba(0,0,0,0.5); opacity: 1; }
     .card-body { padding: 14px; }
     .card-title {
       font-weight: 600;
@@ -259,6 +276,64 @@
       grid-template-columns: 1fr 320px;
       gap: 24px;
       min-height: 400px;
+    }
+    /* Full-page editor layout */
+    .editor-fullpage-wrap .editor-fullpage {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+    }
+    .editor-fullpage .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .editor-fullpage .editor-body-row {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .editor-fullpage .editor-video-section {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow: auto;
+    }
+    .editor-fullpage .editor-video-wrap {
+      flex: 1;
+      min-height: 200px;
+      aspect-ratio: 16/9;
+      max-height: 100%;
+    }
+    .editor-fullpage .editor-sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .editor-fullpage .editor-timeline-row {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .editor-fullpage .editor-timeline-row .editor-trim-row {
+      padding: 0;
+      background: transparent;
+      border: none;
     }
     .editor-video-section { min-width: 0; }
     .editor-video-wrap {
@@ -477,42 +552,24 @@
     </main>
   </div>
 
-  <!-- Editor modal -->
-  <div id="editor-modal" class="modal-overlay">
-    <div class="modal" style="width: 900px;">
-      <div class="modal-header">
+  <!-- Editor full page (full-screen with bottom timeline) -->
+  <div id="editor-modal" class="modal-overlay editor-fullpage-wrap">
+    <div class="editor-fullpage">
+      <div class="editor-header">
         <span class="modal-title" id="editor-title">Edit clip</span>
         <button class="modal-close" id="editor-close">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="editor-layout">
-          <div class="editor-video-section">
-            <div id="editor-preview-unavailable" class="editor-preview-message" style="display:none;">
-              <p>Preview not ready. MKV files are played from cache (remux/transcode). Remux this file first, or wait a moment and open the editor again.</p>
-              <button type="button" class="btn btn-ghost" id="editor-remux-this">Remux this file</button>
-            </div>
-            <div class="editor-video-wrap">
-              <video id="editor-video" controls></video>
-            </div>
-            <div class="editor-timeline">
-              <button class="btn btn-ghost" id="editor-play">Play</button>
-              <button class="btn btn-ghost" id="editor-back5">−5s</button>
-              <button class="btn btn-ghost" id="editor-fwd5">+5s</button>
-              <span class="editor-time" id="editor-time-display">0:00 / 0:00</span>
-              <div class="editor-range-wrap">
-                <input type="range" id="editor-seek" min="0" max="100" value="0" step="0.1" />
-              </div>
-            </div>
-            <div class="editor-trim-btns" style="margin-top:12px;">
-              <button class="btn btn-ghost" id="editor-set-start">Set Start</button>
-              <button class="btn btn-ghost" id="editor-set-end">Set End</button>
-              <button class="btn btn-ghost" id="editor-clear-trim">Clear Trim</button>
-            </div>
-            <div class="editor-timeline" style="margin-top:8px;">
-              <span class="editor-time">Start: <span id="editor-start-val">0</span>s — End: <span id="editor-end-val">0</span>s</span>
-            </div>
+      <div class="editor-body-row">
+        <div class="editor-video-section">
+          <div id="editor-preview-unavailable" class="editor-preview-message" style="display:none;">
+            <p>Preview not ready. MKV files are played from cache (remux/transcode). Remux this file first, or wait a moment and open the editor again.</p>
+            <button type="button" class="btn btn-ghost" id="editor-remux-this">Remux this file</button>
           </div>
-          <div class="editor-sidebar">
+          <div class="editor-video-wrap">
+            <video id="editor-video" controls></video>
+          </div>
+        </div>
+        <div class="editor-sidebar">
             <div class="field">
               <label>Clip title</label>
               <input type="text" id="editor-clip-title" placeholder="My clip" />
@@ -548,6 +605,23 @@
             </div>
             <button class="btn btn-primary" id="editor-create-clip">Create clip</button>
           </div>
+        </div>
+      </div>
+      <div class="editor-timeline-row">
+        <div class="editor-timeline">
+          <button class="btn btn-ghost" id="editor-play">Play</button>
+          <button class="btn btn-ghost" id="editor-back5">−5s</button>
+          <button class="btn btn-ghost" id="editor-fwd5">+5s</button>
+          <span class="editor-time" id="editor-time-display">0:00 / 0:00</span>
+          <div class="editor-range-wrap">
+            <input type="range" id="editor-seek" min="0" max="100" value="0" step="0.1" />
+          </div>
+        </div>
+        <div class="editor-timeline editor-trim-row">
+          <button class="btn btn-ghost" id="editor-set-start">Set Start</button>
+          <button class="btn btn-ghost" id="editor-set-end">Set End</button>
+          <button class="btn btn-ghost" id="editor-clear-trim">Clear Trim</button>
+          <span class="editor-time">Start: <span id="editor-start-val">0</span>s — End: <span id="editor-end-val">0</span>s</span>
         </div>
       </div>
     </div>
@@ -651,6 +725,7 @@
           <div class="card" data-path="${escapeHtml(rec.path)}">
             <div class="card-thumb">
               <div class="check${checked}" data-path="${escapeHtml(rec.path)}"></div>
+              <button type="button" class="card-thumb-play" data-path="${escapeHtml(rec.path)}" title="Open in editor">▶</button>
               <img src="${thumbUrl}" alt="" onerror="this.style.background='var(--bg-elevated)'" />
               <span class="tag ${isMkv ? 'mkv' : 'mp4'}">${escapeHtml(ext) || 'VIDEO'}</span>
             </div>
@@ -679,6 +754,9 @@
       });
       grid.querySelectorAll('.open-editor').forEach(btn => {
         btn.addEventListener('click', () => openEditor(btn.dataset.path));
+      });
+      grid.querySelectorAll('.card-thumb-play').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); openEditor(btn.dataset.path); });
       });
       grid.querySelectorAll('.remux-one').forEach(btn => {
         btn.addEventListener('click', () => remuxPaths([btn.dataset.path]));
@@ -764,13 +842,13 @@
       const isMkv = (path || '').toLowerCase().endsWith('.mkv');
       if (preview.url) {
         msgEl.style.display = 'none';
-        video.src = preview.url;
+        video.src = preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url);
       } else if (isMkv) {
         msgEl.style.display = 'block';
         video.src = '';
       } else {
         msgEl.style.display = 'none';
-        video.src = API + '/stream/recording?path=' + encodeURIComponent(path);
+        video.src = window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path);
       }
 
       const info = await fetchJSON(API + '/recordings/info?path=' + encodeURIComponent(path));
