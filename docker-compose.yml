@@ -8,9 +8,7 @@ services:
       WEBCLIPPER_DATA_DIR: /data
     volumes:
       - webclipper_data:/data
-      # Example recording source mounts
-      # - /mnt/user/recordings:/mnt/recordings:ro
-      # - /mnt/user/nvidia:/mnt/nvidia:ro
+      - /mnt/Recordings:/mnt/Recordings
     restart: unless-stopped
 
 volumes:
