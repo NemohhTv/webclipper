@@ -7,6 +7,7 @@ import tempfile
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -22,6 +23,8 @@ DEFAULT_CLIPS_DIR = os.path.join(DATA_DIR, "clips")
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".mov", ".avi", ".m4v", ".webm", ".ts"}
 DIRECT_PLAY_EXTENSIONS = {".mp4", ".webm", ".m4v", ".mov"}
+BROWSER_FRIENDLY_VIDEO = {"h264"}
+BROWSER_FRIENDLY_AUDIO = {"aac", "mp3", "opus", "vorbis"}
 
 DEFAULT_CONFIG = {
     "sources": [],
@@ -53,10 +56,10 @@ class ClipRequest(BaseModel):
     end: float = 0.0
     title: str = "clip"
     game: str = "Unknown"
-    mode: str = "copy"  # copy | transcode
-    container: str = "mp4"  # mp4 | mkv
+    mode: str = "copy"
+    container: str = "mp4"
     selected_audio_tracks: List[int] = Field(default_factory=list)
-    audio_mode: str = "keep"  # keep | mix
+    audio_mode: str = "keep"
     audio_gains: Dict[str, float] = Field(default_factory=dict)
 
 
@@ -185,12 +188,146 @@ def probe_media(path: str) -> dict:
             }
         )
 
-    has_video = any(s.get("codec_type") == "video" for s in streams)
+    video_codec = ""
+    audio_codec = ""
+    has_video = False
+
+    for stream in streams:
+        if stream.get("codec_type") == "video" and not video_codec:
+            video_codec = (stream.get("codec_name") or "").lower()
+            has_video = True
+        if stream.get("codec_type") == "audio" and not audio_codec:
+            audio_codec = (stream.get("codec_name") or "").lower()
+
     return {
         "duration": duration,
         "audio_tracks": audio_tracks,
         "has_video": has_video,
         "streams": streams,
+        "video_codec": video_codec,
+        "audio_codec": audio_codec,
+    }
+
+
+def choose_preview_strategy(path: str, probe: dict) -> str:
+    ext = os.path.splitext(path)[1].lower()
+    video_codec = probe.get("video_codec", "")
+    audio_codec = probe.get("audio_codec", "")
+
+    if ext in DIRECT_PLAY_EXTENSIONS and video_codec in BROWSER_FRIENDLY_VIDEO and (
+        not audio_codec or audio_codec in BROWSER_FRIENDLY_AUDIO
+    ):
+        return "direct"
+
+    if video_codec == "h264":
+        if not audio_codec or audio_codec in {"aac", "mp3"}:
+            return "remux"
+        return "audio_transcode"
+
+    return "proxy_transcode"
+
+
+def build_preview_asset(path: str, probe: dict) -> dict:
+    strategy = choose_preview_strategy(path, probe)
+
+    if strategy == "direct":
+        encoded = quote(path, safe="")
+        return {
+            "strategy": strategy,
+            "url": f"/stream/direct?path={encoded}",
+        }
+
+    real_path = os.path.realpath(path)
+    mtime = str(os.path.getmtime(real_path))
+    key = hashlib.md5(f"{real_path}|{mtime}|{strategy}".encode("utf-8")).hexdigest()
+    out_name = f"{key}.mp4"
+    out_path = os.path.join(PREVIEW_DIR, out_name)
+
+    if os.path.exists(out_path):
+        return {
+            "strategy": strategy,
+            "url": f"/preview-cache/{out_name}",
+        }
+
+    if strategy == "remux":
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            real_path,
+            "-map",
+            "0:v:0?",
+            "-map",
+            "0:a:0?",
+            "-dn",
+            "-sn",
+            "-c",
+            "copy",
+            "-movflags",
+            "+faststart",
+            out_path,
+        ]
+    elif strategy == "audio_transcode":
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            real_path,
+            "-map",
+            "0:v:0?",
+            "-map",
+            "0:a:0?",
+            "-dn",
+            "-sn",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "160k",
+            "-movflags",
+            "+faststart",
+            out_path,
+        ]
+    else:
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            real_path,
+            "-map",
+            "0:v:0?",
+            "-map",
+            "0:a:0?",
+            "-dn",
+            "-sn",
+            "-vf",
+            "scale='min(1920,iw)':-2",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-crf",
+            "28",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "160k",
+            "-movflags",
+            "+faststart",
+            out_path,
+        ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    if result.returncode != 0 or not os.path.exists(out_path):
+        raise HTTPException(
+            status_code=500,
+            detail=f"Preview build failed: {(result.stderr or '').strip()[:700]}",
+        )
+
+    return {
+        "strategy": strategy,
+        "url": f"/preview-cache/{out_name}",
     }
 
 
@@ -230,10 +367,11 @@ def scan_recordings(sources: List[dict]) -> List[dict]:
 
 def build_thumbnail(path: str, second: float = 1.0) -> str:
     real_path = os.path.realpath(path)
-    key = hashlib.md5(real_path.encode("utf-8")).hexdigest()
+    mtime = str(os.path.getmtime(real_path))
+    key = hashlib.md5(f"{real_path}|{mtime}".encode("utf-8")).hexdigest()
     out_path = os.path.join(THUMBNAILS_DIR, f"{key}.jpg")
 
-    if os.path.exists(out_path) and os.path.getmtime(out_path) >= os.path.getmtime(real_path):
+    if os.path.exists(out_path):
         return out_path
 
     cmd = [
@@ -251,47 +389,9 @@ def build_thumbnail(path: str, second: float = 1.0) -> str:
         "scale=480:-2",
         out_path,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
     if result.returncode != 0 or not os.path.exists(out_path):
         raise HTTPException(status_code=500, detail="Thumbnail generation failed")
-
-    return out_path
-
-
-def build_preview_mp4(path: str) -> str:
-    real_path = os.path.realpath(path)
-    key = hashlib.md5(real_path.encode("utf-8")).hexdigest()
-    out_path = os.path.join(PREVIEW_DIR, f"{key}.mp4")
-
-    if os.path.exists(out_path) and os.path.getmtime(out_path) >= os.path.getmtime(real_path):
-        return out_path
-
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-i",
-        real_path,
-        "-map",
-        "0:v:0?",
-        "-map",
-        "0:a:0?",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "veryfast",
-        "-crf",
-        "24",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "160k",
-        "-movflags",
-        "+faststart",
-        out_path,
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-    if result.returncode != 0 or not os.path.exists(out_path):
-        raise HTTPException(status_code=500, detail="Preview generation failed")
 
     return out_path
 
@@ -463,6 +563,7 @@ async def get_recording_info(path: str):
         raise HTTPException(status_code=404, detail="File not found")
 
     probe = probe_media(path)
+    preview_strategy = choose_preview_strategy(path, probe)
     extension = os.path.splitext(path)[1].lower()
 
     return {
@@ -470,10 +571,19 @@ async def get_recording_info(path: str):
         "path": path,
         "duration": probe["duration"],
         "extension": extension,
-        "needs_transcode_preview": extension not in DIRECT_PLAY_EXTENSIONS,
+        "preview_strategy": preview_strategy,
         "audio_tracks": probe["audio_tracks"],
         "has_video": probe["has_video"],
     }
+
+
+@app.get("/api/recordings/preview")
+async def get_recording_preview(path: str):
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    probe = probe_media(path)
+    preview = build_preview_asset(path, probe)
+    return {"status": "ok", **preview}
 
 
 @app.get("/api/recordings/thumbnail")
@@ -484,16 +594,19 @@ async def get_thumbnail(path: str, time_pos: float = 1.0):
     return FileResponse(thumb, media_type="image/jpeg")
 
 
-@app.get("/stream")
-async def stream_video(path: str, transcode: bool = False):
+@app.get("/preview-cache/{name}")
+async def preview_cache(name: str):
+    safe_name = os.path.basename(name)
+    preview_path = os.path.join(PREVIEW_DIR, safe_name)
+    if not os.path.isfile(preview_path):
+        raise HTTPException(status_code=404, detail="Preview not found")
+    return FileResponse(preview_path, media_type="video/mp4")
+
+
+@app.get("/stream/direct")
+async def stream_direct(path: str):
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="File not found")
-
-    ext = os.path.splitext(path)[1].lower()
-    if transcode or ext not in DIRECT_PLAY_EXTENSIONS:
-        preview_path = build_preview_mp4(path)
-        return FileResponse(preview_path, media_type="video/mp4")
-
     return FileResponse(path, media_type=mime_type_for_path(path))
 
 
@@ -520,7 +633,8 @@ async def create_clip(req: ClipRequest):
         end = duration
 
     selected = req.selected_audio_tracks or [t["stream_index"] for t in probe["audio_tracks"]]
-    selected = [int(x) for x in selected if int(x) in [t["stream_index"] for t in probe["audio_tracks"]]]
+    valid_streams = [t["stream_index"] for t in probe["audio_tracks"]]
+    selected = [int(x) for x in selected if int(x) in valid_streams]
 
     container = (req.container or "mp4").lower().lstrip(".")
     if container not in {"mp4", "mkv"}:
@@ -540,7 +654,6 @@ async def create_clip(req: ClipRequest):
     clips_dir = get_clips_dir()
     base_name = safe_title(req.title)
     output_path = os.path.join(clips_dir, f"{base_name}_{int(time.time())}.{container}")
-
     clip_duration = max(0.01, end - start)
 
     cmd = ["ffmpeg", "-y", "-ss", str(start), "-i", req.filepath, "-t", str(clip_duration)]
