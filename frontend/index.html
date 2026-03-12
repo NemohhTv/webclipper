@@ -380,6 +380,10 @@
       padding: 0;
       background: transparent;
       border: none;
+      flex-wrap: wrap;
+    }
+    .editor-fullpage .editor-timeline-row .editor-trim-row .btn-primary {
+      margin-left: auto;
     }
     .editor-video-section { min-width: 0; }
     .editor-video-wrap {
@@ -461,6 +465,50 @@
       accent-color: var(--accent);
     }
     .editor-trim-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Segus-style timeline: track with yellow highlight segment */
+    .editor-timeline-track-wrap {
+      width: 100%;
+      margin: 8px 0;
+    }
+    .editor-timeline-track {
+      position: relative;
+      height: 32px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .editor-timeline-highlight {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: var(--accent);
+      opacity: 0.85;
+      border-radius: 2px;
+      pointer-events: none;
+      min-width: 2px;
+    }
+    .editor-timeline-playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .editor-timeline-marks {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      padding: 0 2px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
     .editor-sidebar {
       border-left: 1px solid var(--border);
       padding-left: 24px;
@@ -717,11 +765,19 @@
             <input type="range" id="editor-seek" min="0" max="100" value="0" step="0.1" />
           </div>
         </div>
+        <div class="editor-timeline-track-wrap">
+          <div class="editor-timeline-track" id="editor-timeline-track" title="Click to seek">
+            <div class="editor-timeline-highlight" id="editor-timeline-highlight"></div>
+            <div class="editor-timeline-playhead" id="editor-timeline-playhead"></div>
+          </div>
+          <div class="editor-timeline-marks" id="editor-timeline-marks"></div>
+        </div>
         <div class="editor-timeline editor-trim-row">
           <button class="btn btn-ghost" id="editor-set-start">Set Start</button>
           <button class="btn btn-ghost" id="editor-set-end">Set End</button>
           <button class="btn btn-ghost" id="editor-clear-trim">Clear Trim</button>
           <span class="editor-time">Start: <span id="editor-start-val">0</span>s — End: <span id="editor-end-val">0</span>s</span>
+          <button class="btn btn-primary" id="editor-create-clip-timeline">Create Clip</button>
         </div>
       </div>
     </div>
@@ -1009,6 +1065,7 @@
       document.getElementById('editor-seek').value = 0;
       updateEditorTimeDisplay();
       updateEditorTrimDisplay();
+      buildEditorTimelineMarks();
 
       const audioTracks = info.probe?.audio_tracks || [];
       const wrap = document.getElementById('editor-audio-tracks');
@@ -1040,11 +1097,50 @@
       const t = v.currentTime || 0;
       document.getElementById('editor-time-display').textContent = formatTime(t) + ' / ' + formatTime(editorDuration);
       document.getElementById('editor-seek').value = t;
+      updateEditorTimelineHighlight();
     }
 
     function updateEditorTrimDisplay() {
       document.getElementById('editor-start-val').textContent = editorStart.toFixed(1);
       document.getElementById('editor-end-val').textContent = editorEnd.toFixed(1);
+      updateEditorTimelineHighlight();
+    }
+
+    function updateEditorTimelineHighlight() {
+      const highlight = document.getElementById('editor-timeline-highlight');
+      const playhead = document.getElementById('editor-timeline-playhead');
+      if (!highlight || !playhead) return;
+      const duration = Math.max(editorDuration, 0.01);
+      const startPct = (editorStart / duration) * 100;
+      const endPct = (editorEnd / duration) * 100;
+      highlight.style.left = startPct + '%';
+      highlight.style.width = (endPct - startPct) + '%';
+      const video = document.getElementById('editor-video');
+      const t = video ? video.currentTime : 0;
+      playhead.style.left = Math.min(100, (t / duration) * 100) + '%';
+    }
+
+    function buildEditorTimelineMarks() {
+      const container = document.getElementById('editor-timeline-marks');
+      if (!container) return;
+      const duration = editorDuration || 0;
+      if (duration <= 0) {
+        container.innerHTML = '<span>0:00</span>';
+        return;
+      }
+      const step = duration <= 60 ? 10 : duration <= 300 ? 30 : 60;
+      const marks = [];
+      for (let s = 0; s <= Math.ceil(duration); s += step) {
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        marks.push((m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec);
+      }
+      if (duration % step !== 0) {
+        const m = Math.floor(duration / 60);
+        const sec = Math.floor(duration % 60);
+        marks.push((m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec);
+      }
+      container.innerHTML = marks.map(t => '<span>' + t + '</span>').join('');
     }
 
     function formatTime(sec) {
@@ -1055,6 +1151,17 @@
 
     document.getElementById('editor-seek').addEventListener('input', e => {
       document.getElementById('editor-video').currentTime = parseFloat(e.target.value);
+    });
+
+    document.getElementById('editor-timeline-track').addEventListener('click', e => {
+      const track = e.currentTarget;
+      const rect = track.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, x / rect.width));
+      const t = pct * editorDuration;
+      document.getElementById('editor-video').currentTime = t;
+      document.getElementById('editor-seek').value = t;
+      updateEditorTimeDisplay();
     });
 
     document.getElementById('editor-play').addEventListener('click', () => {
@@ -1096,7 +1203,7 @@
       if (e.target.id === 'editor-modal') document.getElementById('editor-modal').classList.remove('open');
     });
 
-    document.getElementById('editor-create-clip').addEventListener('click', async () => {
+    async function doCreateClip() {
       if (!currentEditorRecording) return;
       const indices = [];
       document.querySelectorAll('.editor-audio-cb:checked').forEach(cb => indices.push(parseInt(cb.dataset.index, 10)));
@@ -1120,7 +1227,9 @@
       } catch (e) {
         alert('Export failed: ' + e.message);
       }
-    });
+    }
+    document.getElementById('editor-create-clip').addEventListener('click', () => doCreateClip());
+    document.getElementById('editor-create-clip-timeline').addEventListener('click', () => doCreateClip());
 
     // --- Clips ---
     async function loadClips() {
