@@ -50,9 +50,9 @@ class DeleteRecordingsBody(BaseModel):
     paths: list[str]
 
 
-class RenameRecordingBody(BaseModel):
+class DisplayNameBody(BaseModel):
     path: str
-    new_name: str
+    display_name: str = ""
 
 
 class RemuxBody(BaseModel):
@@ -191,15 +191,15 @@ def api_delete_recordings(body: DeleteRecordingsBody):
     return {"deleted": deleted}
 
 
-@router.put("/api/recordings/rename")
-def api_rename_recording(body: RenameRecordingBody):
-    """Rename a recording file on disk."""
-    try:
-        new_path = recordings.rename_recording(body.path, body.new_name)
-    except ValueError as e:
-        raise HTTPException(400, str(e)) from e
-    info = recordings.get_recording_by_path(new_path)
-    return {"path": new_path, "name": info["name"], "recording": info}
+@router.put("/api/recordings/display-name")
+def api_set_display_name(body: DisplayNameBody):
+    """Set a display name for a recording (does not rename the file)."""
+    info = recordings.get_recording_by_path(body.path)
+    if not info:
+        raise HTTPException(404, "Recording not found")
+    config.set_display_name(body.path, body.display_name.strip())
+    info["display_name"] = body.display_name.strip()
+    return {"ok": True, "recording": info}
 
 
 @router.post("/api/remux")

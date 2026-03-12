@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from app.config import SUPPORTED_EXTENSIONS, THUMBNAILS_DIR
+from app.config import SUPPORTED_EXTENSIONS, THUMBNAILS_DIR, get_display_names
 from app.sources import get_sources
 from app.ffmpeg_utils import get_file_info as ffprobe_file_info
 
@@ -18,6 +18,7 @@ def scan_recordings(source_filter: str | None = None) -> list[dict[str, Any]]:
     sources = get_sources()
     if source_filter:
         sources = [s for s in sources if (s.get("path") or "").rstrip("/") == source_filter.rstrip("/")]
+    display_names = get_display_names()
     results: list[dict[str, Any]] = []
     for src in sources:
         label = src.get("label") or "Unknown"
@@ -35,9 +36,11 @@ def scan_recordings(source_filter: str | None = None) -> list[dict[str, Any]]:
                 except OSError:
                     continue
                 size = stat.st_size
+                resolved = str(entry.resolve())
                 results.append({
-                    "path": str(entry.resolve()),
+                    "path": resolved,
                     "name": entry.name,
+                    "display_name": display_names.get(resolved, ""),
                     "source_label": label,
                     "size_bytes": size,
                     "size_human": _human_size(size),
@@ -79,6 +82,7 @@ def get_recording_by_path(path: str) -> dict[str, Any] | None:
                 return {
                     "path": path_abs,
                     "name": p.name,
+                    "display_name": get_display_names().get(path_abs, ""),
                     "source_label": src.get("label") or "Unknown",
                     "size_bytes": stat.st_size,
                     "size_human": _human_size(stat.st_size),
@@ -104,31 +108,6 @@ def delete_recordings(paths: list[str]) -> list[str]:
         except OSError:
             pass
     return deleted
-
-
-def rename_recording(path: str, new_name: str) -> str:
-    """Rename a recording file. new_name is the new filename (e.g. 'My Video.mp4'). Returns new path."""
-    rec = get_recording_by_path(path)
-    if not rec:
-        raise ValueError("Recording not found")
-    new_name = (new_name or "").strip()
-    if not new_name:
-        raise ValueError("Name cannot be empty")
-    if "/" in new_name or "\\" in new_name:
-        raise ValueError("Name cannot contain path separators")
-    if new_name in (".", ".."):
-        raise ValueError("Invalid name")
-    p = Path(path)
-    new_path = p.parent / new_name
-    if new_path == p:
-        return path
-    if new_path.exists():
-        raise ValueError("A file with that name already exists")
-    try:
-        p.rename(new_path)
-    except OSError as e:
-        raise ValueError(str(e)) from e
-    return str(new_path.resolve())
 
 
 def thumbnail_path_for_file(file_path: str) -> Path:

@@ -17,7 +17,23 @@ DEFAULT_CONFIG = {
     "auto_refresh": False,
     "refresh_interval_seconds": 60,
     "clips_output_folder": str(CLIPS_DIR),
+    "display_names": {},
 }
+
+
+def get_display_names() -> dict[str, str]:
+    return load_config().get("display_names", {})
+
+
+def set_display_name(path: str, name: str) -> None:
+    c = load_config()
+    names = c.get("display_names", {})
+    if name:
+        names[path] = name
+    else:
+        names.pop(path, None)
+    c["display_names"] = names
+    save_config(c)
 
 SUPPORTED_EXTENSIONS = {".mp4", ".mkv", ".mov", ".avi", ".m4v", ".webm", ".ts"}
 

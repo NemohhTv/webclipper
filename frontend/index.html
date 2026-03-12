@@ -1000,10 +1000,10 @@
               <span class="tag ${isMkv ? 'mkv' : 'mp4'}">${escapeHtml(ext) || 'VIDEO'}</span>
             </div>
             <div class="card-body">
-              <div class="card-title" data-path="${escapeHtml(rec.path)}" data-name="${escapeHtml(rec.name)}" title="Double-click to edit name">${escapeHtml(rec.name)}</div>
+              <div class="card-title" data-path="${escapeHtml(rec.path)}" data-display-name="${escapeHtml(rec.display_name || '')}" title="Double-click to set display name">${escapeHtml(rec.display_name || rec.name)}</div>
               <div class="card-meta">
                 <div>${escapeHtml(rec.source_label)}</div>
-                <div>${rec.size_human} · ${formatDate(rec.modified_iso)}</div>
+                <div>${escapeHtml(rec.name)} · ${rec.size_human} · ${formatDate(rec.modified_iso)}</div>
               </div>
               <div class="card-actions">
                 <button class="btn btn-primary open-editor" data-path="${escapeHtml(rec.path)}">Open Editor</button>
@@ -1037,46 +1037,39 @@
         el.addEventListener('dblclick', (e) => {
           e.stopPropagation();
           const path = el.dataset.path;
-          const name = el.dataset.name || '';
+          const currentDisplayName = el.dataset.displayName || '';
           const parent = el.parentElement;
           const input = document.createElement('input');
           input.type = 'text';
           input.className = 'card-title-input';
-          input.value = name;
+          input.placeholder = 'Display name (leave empty to use filename)';
+          input.value = currentDisplayName;
           input.autocomplete = 'off';
           function done() {
             const newName = input.value.trim();
-            if (newName === name) {
+            if (newName === currentDisplayName) {
               parent.replaceChild(el, input);
               return;
             }
-            if (!newName) {
-              parent.replaceChild(el, input);
-              return;
-            }
-            fetch(API + '/recordings/rename', {
+            fetch(API + '/recordings/display-name', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ path, new_name: newName }),
+              body: JSON.stringify({ path, display_name: newName }),
             })
               .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json(); })
-              .then(data => {
-                if (selectedRecordingPaths.has(path)) {
-                  selectedRecordingPaths.delete(path);
-                  selectedRecordingPaths.add(data.path);
-                }
+              .then(() => {
                 parent.replaceChild(el, input);
                 loadRecordings();
               })
               .catch(err => {
-                alert('Rename failed: ' + (err.message || err));
+                alert('Failed to set display name: ' + (err.message || err));
                 parent.replaceChild(el, input);
               });
           }
           input.addEventListener('blur', done);
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-            if (e.key === 'Escape') { input.value = name; input.blur(); }
+            if (e.key === 'Escape') { input.value = currentDisplayName; input.blur(); }
           });
           parent.replaceChild(input, el);
           input.focus();
@@ -1187,7 +1180,7 @@
       editorEnd = 0;
       editorDuration = 0;
       document.getElementById('editor-modal').classList.remove('editor-preview-only');
-      document.getElementById('editor-title').textContent = currentEditorRecording.name;
+      document.getElementById('editor-title').textContent = currentEditorRecording.display_name || currentEditorRecording.name;
       document.getElementById('editor-clip-title').value = '';
       document.getElementById('editor-game').value = '';
       document.getElementById('editor-video').src = '';
