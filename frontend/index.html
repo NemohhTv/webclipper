@@ -207,6 +207,7 @@
       border-radius: 4px;
       background: var(--bg-card);
       cursor: pointer;
+      z-index: 3;
     }
     .card-thumb .check.checked {
       background: var(--accent);
@@ -761,9 +762,9 @@
           <button class="btn btn-ghost" id="browse-clips-folder">Browse...</button>
         </div>
         <div class="settings-section">
-          <h3>Clip cache</h3>
-          <p class="text-muted" style="margin-bottom:8px;">Cached copies of clips (e.g. on NAS) for faster preview. Cleared automatically when you delete clips.</p>
-          <button class="btn btn-ghost" id="clear-clip-cache">Clear clip cache</button>
+          <h3>Stream cache</h3>
+          <p class="text-muted" style="margin-bottom:8px;">Caches clips and recordings streamed from NAS for faster repeat playback. Cleared automatically when you delete those clips or recordings.</p>
+          <button class="btn btn-ghost" id="clear-clip-cache">Clear stream cache</button>
         </div>
         <div class="settings-section">
           <h3>Refresh</h3>
@@ -995,8 +996,10 @@
         `;
       }).join('');
 
-      grid.querySelectorAll('.check').forEach(el => {
-        el.addEventListener('click', () => {
+      grid.querySelectorAll('.card .check').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           const path = el.dataset.path;
           if (selectedRecordingPaths.has(path)) selectedRecordingPaths.delete(path);
           else selectedRecordingPaths.add(path);
@@ -1049,9 +1052,14 @@
     });
 
     function remuxPaths(paths) {
-      fetch(API + '/remux', { method: 'POST', body: JSON.stringify({ paths }) })
+      fetch(API + '/remux', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths }),
+      })
         .then(r => r.json())
-        .then(() => { loadRecordings(); pollRemuxJobs(); });
+        .then(() => { loadRecordings(); pollRemuxJobs(); })
+        .catch(() => { pollRemuxJobs(); });
     }
 
     function pollRemuxJobs() {
@@ -1064,9 +1072,10 @@
         }
         list.innerHTML = jobs.map(j => {
           const pct = j.total ? Math.round((j.done / j.total) * 100) : 0;
+          const current = j.current_file ? ' · ' + (j.current_file.split(/[/\\]/).pop() || '') : '';
           return `
             <div class="job-item">
-              <span class="job-status">${j.status} — ${j.done}/${j.total}</span>
+              <span class="job-status">${j.status} — ${j.done}/${j.total} (${pct}%)${current}</span>
               <div class="job-progress"><div style="width:${pct}%"></div></div>
             </div>
           `;

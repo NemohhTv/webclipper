@@ -185,6 +185,8 @@ def api_preview_info(path: str):
 @router.delete("/api/recordings")
 def api_delete_recordings(body: DeleteRecordingsBody):
     deleted = recordings.delete_recordings(body.paths)
+    for path in deleted:
+        _remove_clip_from_cache(path)
     return {"deleted": deleted}
 
 
@@ -317,8 +319,8 @@ def api_stream_preview(path: str):
 
 
 @router.get("/api/stream/recording")
-def api_stream_recording(path: str):
-    """Stream recording file directly. MKV is not supported; use preview or remux first."""
+def api_stream_recording(path: str, background_tasks: BackgroundTasks):
+    """Stream recording file directly. MKV uses preview; others on NAS are cached for repeat playback."""
     info = recordings.get_recording_by_path(path)
     if not info:
         raise HTTPException(404, "Not found")
@@ -327,6 +329,17 @@ def api_stream_recording(path: str):
             400,
             "MKV files cannot be played directly. Use Remux to convert to MP4, or wait for the preview cache to be ready.",
         )
+    path_obj = Path(path)
+    try:
+        is_local = path_obj.resolve().is_relative_to(config.DATA_DIR.resolve())
+    except (ValueError, OSError):
+        is_local = False
+    if is_local:
+        return FileResponse(path, media_type="video/mp4")
+    cache_path = _clip_cache_path(path)
+    if cache_path.exists():
+        return FileResponse(cache_path, media_type="video/mp4")
+    background_tasks.add_task(_copy_clip_to_cache, path, cache_path)
     return FileResponse(path, media_type="video/mp4")
 
 
