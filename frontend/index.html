@@ -9,18 +9,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-deep: #0a0c10;
-      --bg-card: #12151c;
-      --bg-elevated: #181c24;
-      --border: #2a3142;
+      --bg-deep: #0d1117;
+      --bg-card: #161b22;
+      --bg-elevated: #21262d;
+      --bg-sidebar: #0d1117;
+      --border: #30363d;
       --text: #e6edf3;
       --text-muted: #8b949e;
-      --accent: #f59e0b;
-      --accent-dim: #b45309;
-      --success: #10b981;
-      --danger: #ef4444;
-      --tag-mp4: #10b981;
-      --tag-mkv: #f59e0b;
+      --accent: #e3b341;
+      --accent-dim: #b8952e;
+      --accent-bg: rgba(227, 179, 65, 0.18);
+      --success: #3fb950;
+      --danger: #f85149;
+      --tag-mp4: #3fb950;
+      --tag-mkv: #e3b341;
       --radius: 12px;
       --radius-sm: 8px;
       --shadow: 0 4px 24px rgba(0,0,0,0.4);
@@ -36,45 +38,76 @@
       line-height: 1.5;
     }
 
-    /* Layout */
+    /* Layout: left sidebar + main (Segra-style) */
     .app {
       display: flex;
-      flex-direction: column;
       min-height: 100vh;
     }
-    .nav {
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      height: 56px;
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
+      flex-direction: column;
+      padding: 20px 0;
     }
     .logo {
       font-weight: 700;
       font-size: 1.25rem;
       letter-spacing: -0.02em;
       color: var(--text);
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
     }
-    .tabs {
+    .sidebar-nav {
       display: flex;
+      flex-direction: column;
       gap: 4px;
     }
     .tab {
-      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
       border-radius: var(--radius-sm);
       font-weight: 500;
       cursor: pointer;
       color: var(--text-muted);
       transition: color 0.2s, background 0.2s;
+      border: none;
+      background: none;
+      font-family: inherit;
+      font-size: 0.95rem;
+      text-align: left;
+      width: 100%;
     }
-    .tab:hover { color: var(--text); }
+    .tab:hover { color: var(--text); background: var(--bg-elevated); }
     .tab.active {
-      color: var(--accent);
-      background: rgba(245, 158, 11, 0.12);
+      color: var(--bg-deep);
+      background: var(--accent);
     }
+    .tab svg { flex-shrink: 0; opacity: 0.9; }
+    .tab.active svg { opacity: 1; }
 
+    .main-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .main-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .main-title { font-size: 1.25rem; font-weight: 600; }
     .main {
       flex: 1;
       padding: 24px;
@@ -114,8 +147,8 @@
       transition: background 0.2s, transform 0.05s;
     }
     .btn:active { transform: scale(0.98); }
-    .btn-primary { background: var(--accent); color: #0a0c10; }
-    .btn-primary:hover { background: #fbbf24; }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-primary:hover { background: var(--accent-dim); filter: brightness(1.1); }
     .btn-success { background: var(--success); color: #fff; }
     .btn-success:hover { background: #34d399; }
     .btn-danger { background: var(--danger); color: #fff; }
@@ -277,15 +310,21 @@
       gap: 24px;
       min-height: 400px;
     }
-    /* Full-page editor layout */
+    /* Full-page editor: takes entire viewport */
+    .modal-overlay.editor-fullpage-wrap {
+      padding: 0;
+      align-items: stretch;
+      justify-content: stretch;
+    }
     .editor-fullpage-wrap .editor-fullpage {
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       max-width: none;
-      max-height: 100vh;
+      max-height: none;
       display: flex;
       flex-direction: column;
-      background: var(--bg);
+      background: var(--bg-card);
+      border-radius: 0;
     }
     .editor-fullpage .editor-header {
       display: flex;
@@ -308,12 +347,19 @@
       flex-direction: column;
       padding: 16px;
       overflow: auto;
+      position: relative;
     }
     .editor-fullpage .editor-video-wrap {
       flex: 1;
       min-height: 200px;
-      aspect-ratio: 16/9;
       max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 16/9;
+      align-self: center;
+      width: 100%;
+      max-width: 100%;
     }
     .editor-fullpage .editor-sidebar {
       width: 320px;
@@ -342,11 +388,13 @@
       overflow: hidden;
       aspect-ratio: 16/9;
       margin-bottom: 16px;
+      position: relative;
     }
     .editor-video-wrap video {
       width: 100%;
       height: 100%;
       display: block;
+      object-fit: contain;
     }
     .editor-preview-message {
       background: var(--bg-elevated);
@@ -357,6 +405,40 @@
       color: var(--text-muted);
     }
     .editor-preview-message p { margin: 0 0 12px 0; }
+    /* Loading preview overlay (MKV / generating) */
+    .editor-loading-preview {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-deep);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 5;
+      color: var(--text-muted);
+    }
+    .editor-loading-preview.hidden { display: none; }
+    .editor-loading-preview .loading-text { font-size: 1rem; }
+    .editor-loading-preview .loading-bar-wrap {
+      width: 80%;
+      max-width: 320px;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .editor-loading-preview .loading-bar-fill {
+      height: 100%;
+      width: 40%;
+      background: var(--accent);
+      border-radius: 4px;
+      animation: loading-bar 1.2s ease-in-out infinite;
+    }
+    @keyframes loading-bar {
+      0%, 100% { transform: translateX(-100%); }
+      50% { transform: translateX(350%); }
+    }
     .editor-timeline {
       display: flex;
       align-items: center;
@@ -490,16 +572,29 @@
 </head>
 <body>
   <div class="app">
-    <nav class="nav">
+    <aside class="sidebar">
       <span class="logo">WebClipper</span>
-      <div class="tabs">
-        <button class="tab active" data-tab="recordings">Recordings</button>
-        <button class="tab" data-tab="clips">Clips</button>
-        <button class="tab" data-tab="settings">Settings</button>
-      </div>
-    </nav>
+      <nav class="sidebar-nav">
+        <button class="tab active" data-tab="recordings" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Recordings
+        </button>
+        <button class="tab" data-tab="clips" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><line x1="12" y1="17" x2="12" y2="13"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+          Clips
+        </button>
+        <button class="tab" data-tab="settings" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+      </nav>
+    </aside>
 
-    <main class="main">
+    <div class="main-wrap">
+      <header class="main-header">
+        <h1 class="main-title" id="main-view-title">Recordings</h1>
+      </header>
+      <main class="main">
       <!-- Recordings view -->
       <div id="view-recordings" class="view active">
         <div class="toolbar">
@@ -550,6 +645,7 @@
         </div>
       </div>
     </main>
+    </div>
   </div>
 
   <!-- Editor full page (full-screen with bottom timeline) -->
@@ -566,6 +662,10 @@
             <button type="button" class="btn btn-ghost" id="editor-remux-this">Remux this file</button>
           </div>
           <div class="editor-video-wrap">
+            <div id="editor-loading-preview" class="editor-loading-preview hidden">
+              <span class="loading-text">Loading preview…</span>
+              <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
+            </div>
             <video id="editor-video" controls></video>
           </div>
         </div>
@@ -674,15 +774,19 @@
     }
 
     // --- Tabs ---
+    const viewTitles = { recordings: 'Recordings', clips: 'Clips', settings: 'Settings' };
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById('view-' + tab.dataset.tab).classList.add('active');
-        if (tab.dataset.tab === 'recordings') loadRecordings();
-        if (tab.dataset.tab === 'clips') loadClips();
-        if (tab.dataset.tab === 'settings') loadSettings();
+        const viewId = tab.dataset.tab;
+        document.getElementById('view-' + viewId).classList.add('active');
+        const titleEl = document.getElementById('main-view-title');
+        if (titleEl) titleEl.textContent = viewTitles[viewId] || viewId;
+        if (viewId === 'recordings') loadRecordings();
+        if (viewId === 'clips') loadClips();
+        if (viewId === 'settings') loadSettings();
       });
     });
 
@@ -825,30 +929,77 @@
     setInterval(pollRemuxJobs, 2000);
 
     // --- Editor ---
+    let editorPreviewRetryCount = 0;
+    const EDITOR_PREVIEW_RETRY_MAX = 15;
+
+    function showEditorLoadingPreview(show) {
+      const el = document.getElementById('editor-loading-preview');
+      if (el) el.classList.toggle('hidden', !show);
+    }
+
     async function openEditor(path) {
       currentEditorRecording = recordingsList.find(r => r.path === path) || { path, name: path };
       editorStart = 0;
       editorEnd = 0;
       editorDuration = 0;
+      editorPreviewRetryCount = 0;
       document.getElementById('editor-title').textContent = currentEditorRecording.name;
       document.getElementById('editor-clip-title').value = '';
       document.getElementById('editor-game').value = '';
       document.getElementById('editor-video').src = '';
       document.getElementById('editor-modal').classList.add('open');
 
-      const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
       const video = document.getElementById('editor-video');
       const msgEl = document.getElementById('editor-preview-unavailable');
       const isMkv = (path || '').toLowerCase().endsWith('.mkv');
-      if (preview.url) {
-        msgEl.style.display = 'none';
-        video.src = preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url);
-      } else if (isMkv) {
-        msgEl.style.display = 'block';
-        video.src = '';
-      } else {
-        msgEl.style.display = 'none';
-        video.src = window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path);
+
+      showEditorLoadingPreview(true);
+      msgEl.style.display = 'none';
+
+      function onVideoCanPlay() {
+        showEditorLoadingPreview(false);
+        video.removeEventListener('loadeddata', onVideoCanPlay);
+        video.removeEventListener('canplay', onVideoCanPlay);
+        video.removeEventListener('error', onVideoError);
+      }
+      function onVideoError() {
+        if (!isMkv) return;
+        showEditorLoadingPreview(true);
+        if (editorPreviewRetryCount >= EDITOR_PREVIEW_RETRY_MAX) {
+          showEditorLoadingPreview(false);
+          msgEl.style.display = 'block';
+          video.src = '';
+          return;
+        }
+        editorPreviewRetryCount++;
+        setTimeout(() => trySetPreviewUrl(path, video, msgEl, onVideoCanPlay, onVideoError), 3000);
+      }
+
+      try {
+        const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
+        if (preview.url) {
+          const url = preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url);
+          video.addEventListener('loadeddata', onVideoCanPlay);
+          video.addEventListener('canplay', onVideoCanPlay);
+          video.addEventListener('error', onVideoError);
+          video.src = url;
+        } else if (isMkv) {
+          showEditorLoadingPreview(false);
+          msgEl.style.display = 'block';
+        } else {
+          video.src = window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path);
+          video.addEventListener('loadeddata', onVideoCanPlay);
+          video.addEventListener('canplay', onVideoCanPlay);
+          video.addEventListener('error', onVideoError);
+        }
+      } catch (e) {
+        showEditorLoadingPreview(false);
+        if (isMkv) msgEl.style.display = 'block';
+        else {
+          video.src = window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path);
+          video.addEventListener('loadeddata', onVideoCanPlay);
+          video.addEventListener('error', onVideoError);
+        }
       }
 
       const info = await fetchJSON(API + '/recordings/info?path=' + encodeURIComponent(path));
@@ -870,6 +1021,18 @@
 
       video.onseeked = () => updateEditorTimeDisplay();
       video.ontimeupdate = () => updateEditorTimeDisplay();
+    }
+
+    async function trySetPreviewUrl(path, video, msgEl, onSuccess, onError) {
+      try {
+        const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
+        if (preview.url) {
+          const url = preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url);
+          video.src = url;
+        }
+      } catch (e) {
+        onError();
+      }
     }
 
     function updateEditorTimeDisplay() {
