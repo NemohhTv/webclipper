@@ -1386,9 +1386,16 @@
       updateEditorTrimDisplay();
     });
 
-    document.getElementById('editor-close').addEventListener('click', () => {
+    function closeEditor() {
+      const video = document.getElementById('editor-video');
+      if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
       document.getElementById('editor-modal').classList.remove('open');
-    });
+    }
+    document.getElementById('editor-close').addEventListener('click', closeEditor);
     document.getElementById('editor-remux-this').addEventListener('click', () => {
       if (!currentEditorRecording || !currentEditorRecording.path) return;
       remuxPaths([currentEditorRecording.path]);
@@ -1398,7 +1405,7 @@
     // Close editor on Escape key
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && document.getElementById('editor-modal').classList.contains('open')) {
-        document.getElementById('editor-modal').classList.remove('open');
+        closeEditor();
       }
     });
 
@@ -1451,7 +1458,7 @@
         const text = await r.text();
         if (!r.ok) throw new Error(text || r.statusText);
         showCreatingClipOverlay(false);
-        document.getElementById('editor-modal').classList.remove('open');
+        closeEditor();
         await loadClips();
         document.querySelector('.tab[data-tab="clips"]').click();
         showClipsToast('Clip created and saved to Clips.');
