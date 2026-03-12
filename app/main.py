@@ -239,9 +239,43 @@ def api_create_clip(body: CreateClipBody):
     return {"path": result, "ok": True}
 
 
+def _clip_by_path(path: str) -> dict | None:
+    """Return clip dict if path is in list_clips()."""
+    for c in clips_store.list_clips():
+        if c.get("path") == path:
+            return c
+    return None
+
+
 @router.get("/api/clips")
 def api_clips():
     return {"clips": clips_store.list_clips()}
+
+
+@router.get("/api/clips/info")
+def api_clip_info(path: str):
+    """Probe a clip file (duration, audio tracks) for the editor."""
+    if not _clip_by_path(path):
+        raise HTTPException(404, "Clip not found")
+    probe = get_file_info(path)
+    return {"probe": probe}
+
+
+@router.get("/api/clips/thumbnail")
+def api_clip_thumbnail(path: str):
+    """Generate or serve thumbnail for a clip."""
+    if not _clip_by_path(path):
+        raise HTTPException(404, "Clip not found")
+    import hashlib
+    from app.config import THUMBNAILS_DIR
+    key = hashlib.sha256(path.encode()).hexdigest()[:24]
+    thumb_path = THUMBNAILS_DIR / f"{key}.jpg"
+    if not thumb_path.exists():
+        config.ensure_dirs()
+        generate_thumbnail(path, thumb_path, time_sec=1.0)
+    if not thumb_path.exists():
+        raise HTTPException(404, "Thumbnail not generated")
+    return FileResponse(thumb_path, media_type="image/jpeg")
 
 
 @router.delete("/api/clips")

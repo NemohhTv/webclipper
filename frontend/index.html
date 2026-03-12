@@ -603,6 +603,11 @@
       flex-wrap: wrap;
     }
     .editor-trim-bar .btn-primary { margin-left: auto; }
+    #editor-modal.editor-preview-only .editor-sidebar .field,
+    #editor-modal.editor-preview-only #editor-create-clip,
+    #editor-modal.editor-preview-only #editor-create-clip-timeline {
+      display: none;
+    }
 
     /* Clips grid (reuse card styles) */
     .clip-card .card-actions { flex-direction: row; }
@@ -886,6 +891,7 @@
     let selectedRecordingPaths = new Set();
     let selectedClipPaths = new Set();
     let currentEditorRecording = null;
+    let editorIsClipPreview = false;
     let editorStart = 0;
     let editorEnd = 0;
     let editorDuration = 0;
@@ -1070,11 +1076,13 @@
     }
 
     async function openEditor(path) {
+      editorIsClipPreview = false;
       currentEditorRecording = recordingsList.find(r => r.path === path) || { path, name: path };
       editorStart = 0;
       editorEnd = 0;
       editorDuration = 0;
       editorPreviewRetryCount = 0;
+      document.getElementById('editor-modal').classList.remove('editor-preview-only');
       document.getElementById('editor-title').textContent = currentEditorRecording.name;
       document.getElementById('editor-clip-title').value = '';
       document.getElementById('editor-game').value = '';
@@ -1163,6 +1171,54 @@
         });
       });
 
+      video.onseeked = () => updateEditorTimeDisplay();
+      video.ontimeupdate = () => updateEditorTimeDisplay();
+    }
+
+    async function openEditorForClip(clipPath, clipName) {
+      editorIsClipPreview = true;
+      currentEditorRecording = { path: clipPath, name: clipName || clipPath };
+      editorStart = 0;
+      editorEnd = 0;
+      editorDuration = 0;
+      document.getElementById('editor-modal').classList.add('editor-preview-only');
+      document.getElementById('editor-title').textContent = (clipName || clipPath) + ' (Preview)';
+      document.getElementById('editor-video').src = '';
+      document.getElementById('editor-modal').classList.add('open');
+      const video = document.getElementById('editor-video');
+      const msgEl = document.getElementById('editor-preview-unavailable');
+      msgEl.style.display = 'none';
+      showEditorLoadingPreview(true);
+      video.addEventListener('loadeddata', () => showEditorLoadingPreview(false));
+      video.addEventListener('canplay', () => showEditorLoadingPreview(false));
+      video.addEventListener('error', () => { showEditorLoadingPreview(false); });
+      video.src = window.location.origin + API + '/stream/clip?path=' + encodeURIComponent(clipPath);
+      try {
+        const info = await fetchJSON(API + '/clips/info?path=' + encodeURIComponent(clipPath));
+        const probe = info.probe || {};
+        editorDuration = probe.duration || 0;
+        editorEnd = editorDuration;
+        document.getElementById('editor-seek').max = editorDuration;
+        document.getElementById('editor-seek').value = 0;
+        updateEditorTimeDisplay();
+        updateEditorTrimDisplay();
+        buildEditorTimelineMarks();
+        const audioTracks = probe.audio_tracks || [];
+        const wrap = document.getElementById('editor-audio-tracks');
+        wrap.innerHTML = audioTracks.length ? audioTracks.map((a, i) => `
+          <div class="editor-audio-track-row">
+            <label>Track ${i + 1}: ${a.codec || 'audio'} ${a.channels ? a.channels + 'ch' : ''}</label>
+          </div>
+        `).join('') : '<p class="editor-time">No audio tracks</p>';
+      } catch (e) {
+        video.addEventListener('loadedmetadata', () => {
+          editorDuration = video.duration || 0;
+          editorEnd = editorDuration;
+          document.getElementById('editor-seek').max = editorDuration;
+          updateEditorTrimDisplay();
+          buildEditorTimelineMarks();
+        }, { once: true });
+      }
       video.onseeked = () => updateEditorTimeDisplay();
       video.ontimeupdate = () => updateEditorTimeDisplay();
     }
@@ -1413,16 +1469,19 @@
       }
       grid.innerHTML = clipsList.map(clip => {
         const checked = selectedClipPaths.has(clip.path) ? ' checked' : '';
+        const thumbUrl = API + '/clips/thumbnail?path=' + encodeURIComponent(clip.path);
         return `
           <div class="card clip-card">
-            <div class="card-thumb" style="aspect-ratio:16/9;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;position:relative;">
-              <div class="check${checked}" data-path="${escapeHtml(clip.path)}" style="position:absolute;top:8px;left:8px;"></div>
-              <span class="editor-time">${clip.size_human}</span>
+            <div class="card-thumb clip-card-thumb" style="aspect-ratio:16/9;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;overflow:hidden;" data-path="${escapeHtml(clip.path)}" data-name="${escapeHtml(clip.title || clip.name || '')}" title="Preview">
+              <div class="check${checked}" data-path="${escapeHtml(clip.path)}" style="position:absolute;top:8px;left:8px;z-index:2;"></div>
+              <img src="${thumbUrl}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+              <span class="editor-time clip-thumb-fallback" style="display:none;">${clip.size_human}</span>
             </div>
             <div class="card-body">
               <div class="card-title">${escapeHtml(clip.title || clip.name)}</div>
               <div class="card-meta">${clip.size_human} · ${formatDate(clip.modified_iso)}</div>
               <div class="card-actions">
+                <button type="button" class="btn btn-ghost btn-preview-clip" data-path="${escapeHtml(clip.path)}" data-name="${escapeHtml(clip.title || clip.name || '')}">Preview</button>
                 <a class="btn btn-ghost" href="${API + '/stream/clip?path=' + encodeURIComponent(clip.path)}" target="_blank">Play</a>
                 <a class="btn btn-ghost btn-download-clip" href="${API + '/clips/download?path=' + encodeURIComponent(clip.path)}" download="${escapeHtml((clip.title || clip.name || 'clip') + '.mp4')}">Download</a>
               </div>
@@ -1431,11 +1490,25 @@
         `;
       }).join('');
       grid.querySelectorAll('.clip-card .check').forEach(el => {
-        el.addEventListener('click', () => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
           const path = el.dataset.path;
           if (selectedClipPaths.has(path)) selectedClipPaths.delete(path);
           else selectedClipPaths.add(path);
           el.classList.toggle('checked', selectedClipPaths.has(path));
+        });
+      });
+      grid.querySelectorAll('.clip-card-thumb').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('.check')) return;
+          const path = el.dataset.path;
+          const name = el.dataset.name || '';
+          openEditorForClip(path, name);
+        });
+      });
+      grid.querySelectorAll('.btn-preview-clip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openEditorForClip(btn.dataset.path, btn.dataset.name || '');
         });
       });
     }
