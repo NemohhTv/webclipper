@@ -20,6 +20,6 @@ RUN mkdir -p /data /data/clips /data/thumbnails /data/preview
 
 VOLUME /data
 
-EXPOSE 8765
+EXPOSE 8800
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8765"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8800"]

@@ -7,9 +7,8 @@ from typing import Any
 from urllib.parse import quote
 
 import hashlib
-import shutil
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -190,19 +189,16 @@ def api_preview_info(path: str):
 @router.delete("/api/recordings")
 def api_delete_recordings(body: DeleteRecordingsBody):
     deleted = recordings.delete_recordings(body.paths)
-    for path in deleted:
-        _remove_clip_from_cache(path)
     return {"deleted": deleted}
 
 
 @router.put("/api/recordings/rename")
 def api_rename_recording(body: RenameRecordingBody):
-    """Rename a recording file on disk. Invalidates stream cache for old path."""
+    """Rename a recording file on disk."""
     try:
         new_path = recordings.rename_recording(body.path, body.new_name)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
-    _remove_clip_from_cache(body.path)
     info = recordings.get_recording_by_path(new_path)
     return {"path": new_path, "name": info["name"], "recording": info}
 
@@ -302,26 +298,10 @@ def api_clip_thumbnail(path: str):
 @router.delete("/api/clips")
 def api_delete_clips(body: DeleteClipsBody):
     deleted = clips_store.delete_clips(body.paths)
-    for path in deleted:
-        _remove_clip_from_cache(path)
     return {"deleted": deleted}
 
 
-@router.delete("/api/clips/cache")
-def api_clear_clip_cache():
-    """Clear the clip stream cache (NAS preview cache). Frees disk space."""
-    count = _clear_clip_cache()
-    return {"cleared": count}
-
-
-# --- Streaming: direct file or preview cache ---
-
-def _stream_file(path: str, media_type: str = "video/mp4"):
-    path_obj = Path(path)
-    if not path_obj.exists() or not path_obj.is_file():
-        raise HTTPException(404, "File not found")
-    return FileResponse(path_obj, media_type=media_type)
-
+# --- Streaming ---
 
 @router.get("/api/stream/preview")
 def api_stream_preview(path: str):
@@ -338,92 +318,34 @@ def api_stream_preview(path: str):
 
 
 @router.get("/api/stream/recording")
-def api_stream_recording(path: str, background_tasks: BackgroundTasks):
-    """Stream recording file directly. MKV uses preview; others on NAS are cached for repeat playback."""
+def api_stream_recording(path: str):
+    """Stream recording file directly."""
     info = recordings.get_recording_by_path(path)
     if not info:
         raise HTTPException(404, "Not found")
     if Path(path).suffix.lower() == ".mkv":
         raise HTTPException(
             400,
-            "MKV files cannot be played directly. Use Remux to convert to MP4, or wait for the preview cache to be ready.",
+            "MKV files cannot be played directly. Use Remux to convert to MP4.",
         )
     path_obj = Path(path)
-    try:
-        is_local = path_obj.resolve().is_relative_to(config.DATA_DIR.resolve())
-    except (ValueError, OSError):
-        is_local = False
-    cache_hdr = {"Cache-Control": "no-store"}
-    if is_local:
-        return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
-    cache_path = _clip_cache_path(path)
-    if cache_path.exists():
-        return FileResponse(cache_path, media_type="video/mp4", headers=cache_hdr)
-    background_tasks.add_task(_copy_clip_to_cache, path, cache_path)
-    return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
+    if not path_obj.exists() or not path_obj.is_file():
+        raise HTTPException(404, "File not found")
+    return FileResponse(path_obj, media_type="video/mp4", headers={"Cache-Control": "no-store"})
 
 
-def _clip_cache_path(source_path: str) -> Path:
-    """Path in clip cache for a given source path (e.g. on NAS)."""
-    key = hashlib.sha256(source_path.encode()).hexdigest()[:32]
-    return config.CLIP_CACHE_DIR / f"{key}.mp4"
-
-
-def _copy_clip_to_cache(source_path: str, cache_path: Path) -> None:
-    """Background: copy clip from NAS/source to local cache for faster repeat streams."""
-    try:
-        if not Path(source_path).is_file():
-            return
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source_path, cache_path)
-    except (OSError, IOError):
-        pass
-
-
-def _remove_clip_from_cache(source_path: str) -> None:
-    """Remove cached file for a clip when the clip is deleted (keeps cache lightweight)."""
-    try:
-        cache_path = _clip_cache_path(source_path)
-        if cache_path.exists():
-            cache_path.unlink()
-    except (OSError, IOError):
-        pass
-
-
-def _clear_clip_cache() -> int:
-    """Delete all files in clip cache. Returns number of files removed."""
-    count = 0
-    if not config.CLIP_CACHE_DIR.exists():
-        return 0
-    try:
-        for f in config.CLIP_CACHE_DIR.iterdir():
-            if f.is_file():
-                f.unlink()
-                count += 1
-    except (OSError, IOError):
-        pass
-    return count
 
 
 @router.get("/api/stream/clip")
-def api_stream_clip(path: str, background_tasks: BackgroundTasks):
-    """Stream a clip file. Clips on NAS are cached locally after first stream for faster repeat previews."""
+def api_stream_clip(path: str):
+    """Stream a clip file directly."""
     clips = clips_store.list_clips()
     if not any(c["path"] == path for c in clips):
         raise HTTPException(404, "Clip not found")
     path_obj = Path(path)
-    try:
-        is_local = path_obj.resolve().is_relative_to(config.DATA_DIR.resolve())
-    except (ValueError, OSError):
-        is_local = False
-    cache_hdr = {"Cache-Control": "no-store"}
-    if is_local:
-        return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
-    cache_path = _clip_cache_path(path)
-    if cache_path.exists():
-        return FileResponse(cache_path, media_type="video/mp4", headers=cache_hdr)
-    background_tasks.add_task(_copy_clip_to_cache, path, cache_path)
-    return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
+    if not path_obj.exists() or not path_obj.is_file():
+        raise HTTPException(404, "File not found")
+    return FileResponse(path_obj, media_type="video/mp4", headers={"Cache-Control": "no-store"})
 
 
 @router.get("/api/clips/download")

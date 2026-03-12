@@ -779,11 +779,6 @@
           <button class="btn btn-ghost" id="browse-clips-folder">Browse...</button>
         </div>
         <div class="settings-section">
-          <h3>Stream cache</h3>
-          <p class="text-muted" style="margin-bottom:8px;">Caches clips and recordings streamed from NAS for faster repeat playback. Cleared automatically when you delete those clips or recordings.</p>
-          <button class="btn btn-ghost" id="clear-clip-cache">Clear stream cache</button>
-        </div>
-        <div class="settings-section">
           <h3>Refresh</h3>
           <label><input type="checkbox" id="auto-refresh" /> Auto refresh</label>
           <div style="margin-top:8px;">
@@ -805,8 +800,8 @@
     <div class="editor-body-row">
       <div class="editor-video-section">
         <div id="editor-preview-unavailable" class="editor-preview-message" style="display:none;">
-          <p>Preview not ready. MKV files need to be remuxed first.</p>
-          <button type="button" class="btn btn-ghost" id="editor-remux-this">Remux this file</button>
+          <p>Video failed to load. Check the file or connection.</p>
+          <button type="button" class="btn btn-ghost" id="editor-remux-this" style="display:none;">Remux this file</button>
         </div>
         <div class="editor-video-wrap">
           <div id="editor-loading-preview" class="editor-loading-preview hidden">
@@ -1171,8 +1166,6 @@
     setInterval(pollRemuxJobs, 2000);
 
     // --- Editor ---
-    let editorPreviewRetryCount = 0;
-    const EDITOR_PREVIEW_RETRY_MAX = 15;
 
     function showEditorLoadingPreview(show) {
       const el = document.getElementById('editor-loading-preview');
@@ -1185,7 +1178,6 @@
       editorStart = 0;
       editorEnd = 0;
       editorDuration = 0;
-      editorPreviewRetryCount = 0;
       document.getElementById('editor-modal').classList.remove('editor-preview-only');
       document.getElementById('editor-title').textContent = currentEditorRecording.name;
       document.getElementById('editor-clip-title').value = '';
@@ -1195,10 +1187,12 @@
 
       const video = document.getElementById('editor-video');
       const msgEl = document.getElementById('editor-preview-unavailable');
+      const remuxBtn = document.getElementById('editor-remux-this');
       const isMkv = (path || '').toLowerCase().endsWith('.mkv');
 
       showEditorLoadingPreview(true);
       msgEl.style.display = 'none';
+      remuxBtn.style.display = isMkv ? '' : 'none';
       const slowHint = document.getElementById('editor-loading-slow-hint');
       if (slowHint) slowHint.style.display = 'none';
       const stopBtn = document.getElementById('editor-loading-stop');
@@ -1235,48 +1229,37 @@
         clearTimeout(loadingSlowTimer);
         if (slowHint) slowHint.style.display = 'none';
         if (stopBtn) stopBtn.style.display = 'none';
-        if (isMkv) {
-          showEditorLoadingPreview(true);
-          if (editorPreviewRetryCount >= EDITOR_PREVIEW_RETRY_MAX) {
-            showEditorLoadingPreview(false);
-            msgEl.style.display = 'block';
-            video.src = '';
-            return;
-          }
-          editorPreviewRetryCount++;
-          setTimeout(() => trySetPreviewUrl(path, video, msgEl, onVideoCanPlay, onVideoError), 3000);
-        } else {
-          showEditorLoadingPreview(false);
-          msgEl.querySelector('p').textContent = 'Video failed to load. Check the file or connection.';
-          msgEl.style.display = 'block';
-        }
+        showEditorLoadingPreview(false);
+        msgEl.querySelector('p').textContent = isMkv
+          ? 'Preview not ready. MKV files need to be remuxed first.'
+          : 'Video failed to load. Check the file or connection.';
+        msgEl.style.display = 'block';
       }
 
-      try {
-        const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
-        if (preview.url) {
-          const url = streamUrl(preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url));
-          video.addEventListener('loadeddata', onVideoCanPlay);
-          video.addEventListener('canplay', onVideoCanPlay);
-          video.addEventListener('error', onVideoError);
-          video.src = url;
-        } else if (isMkv) {
+      if (isMkv) {
+        try {
+          const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
+          if (preview.url) {
+            const url = streamUrl(preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url));
+            video.addEventListener('loadeddata', onVideoCanPlay);
+            video.addEventListener('canplay', onVideoCanPlay);
+            video.addEventListener('error', onVideoError);
+            video.src = url;
+          } else {
+            showEditorLoadingPreview(false);
+            msgEl.querySelector('p').textContent = 'Preview not ready. MKV files need to be remuxed first.';
+            msgEl.style.display = 'block';
+          }
+        } catch (e) {
           showEditorLoadingPreview(false);
+          msgEl.querySelector('p').textContent = 'Preview not ready. MKV files need to be remuxed first.';
           msgEl.style.display = 'block';
-        } else {
-          video.src = streamUrl(window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path));
-          video.addEventListener('loadeddata', onVideoCanPlay);
-          video.addEventListener('canplay', onVideoCanPlay);
-          video.addEventListener('error', onVideoError);
         }
-      } catch (e) {
-        showEditorLoadingPreview(false);
-        if (isMkv) msgEl.style.display = 'block';
-        else {
-          video.src = streamUrl(window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path));
-          video.addEventListener('loadeddata', onVideoCanPlay);
-          video.addEventListener('error', onVideoError);
-        }
+      } else {
+        video.src = streamUrl(window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path));
+        video.addEventListener('loadeddata', onVideoCanPlay);
+        video.addEventListener('canplay', onVideoCanPlay);
+        video.addEventListener('error', onVideoError);
       }
 
       const info = await fetchJSON(API + '/recordings/info?path=' + encodeURIComponent(path));
@@ -1358,18 +1341,6 @@
       }
       video.onseeked = () => updateEditorTimeDisplay();
       video.ontimeupdate = () => updateEditorTimeDisplay();
-    }
-
-    async function trySetPreviewUrl(path, video, msgEl, onSuccess, onError) {
-      try {
-        const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
-        if (preview.url) {
-          const url = streamUrl(preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url));
-          video.src = url;
-        }
-      } catch (e) {
-        onError();
-      }
     }
 
     function updateEditorTimeDisplay() {
@@ -1723,18 +1694,6 @@
         alert('Failed to add source: ' + (err.message || err));
       }
     }));
-
-    document.getElementById('clear-clip-cache').addEventListener('click', async () => {
-      try {
-        const r = await fetch(API + '/clips/cache', { method: 'DELETE' });
-        if (!r.ok) throw new Error(await r.text());
-        const data = await r.json();
-        const n = data.cleared ?? 0;
-        alert(n ? `Cleared ${n} cached file(s).` : 'Clip cache is already empty.');
-      } catch (err) {
-        alert('Failed to clear cache: ' + (err.message || err));
-      }
-    });
 
     document.getElementById('browse-clips-folder').addEventListener('click', () => {
       const display = document.getElementById('clips-folder-display').textContent.trim();

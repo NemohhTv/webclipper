@@ -3,7 +3,7 @@ services:
   webclipper:
     build: .
     ports:
-      - "8765:8765"
+      - "8800:8800"
     volumes:
       - webclipper-data:/data
       # Mount your NAS recordings root so /mnt/recordings shows Elgato, Medal, etc.

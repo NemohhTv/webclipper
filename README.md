@@ -30,7 +30,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Open http://localhost:8765. Add a source (path to a folder with video files), then reload recordings.
+Open http://localhost:8800. Add a source (path to a folder with video files), then reload recordings.
 
 ### Docker
 
@@ -42,7 +42,7 @@ Open http://localhost:8765. Add a source (path to a folder with video files), th
 docker compose up -d
 ```
 
-Open http://localhost:8765. In Settings, add a source with the **container** path (e.g. `/mnt/recordings/Elgato`), then use Recordings to browse and edit.
+Open http://localhost:8800. In Settings, add a source with the **container** path (e.g. `/mnt/recordings/Elgato`), then use Recordings to browse and edit.
 
 ## Data layout
 
