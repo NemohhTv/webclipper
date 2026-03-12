@@ -334,7 +334,7 @@ def api_stream_preview(path: str):
         raise HTTPException(404, "Preview not ready")
     ext = Path(preview_path).suffix.lower()
     media_type = "video/webm" if ext == ".webm" else "video/mp4"
-    return FileResponse(preview_path, media_type=media_type, headers={"Cache-Control": "private, max-age=300"})
+    return FileResponse(preview_path, media_type=media_type, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/api/stream/recording")
@@ -353,7 +353,7 @@ def api_stream_recording(path: str, background_tasks: BackgroundTasks):
         is_local = path_obj.resolve().is_relative_to(config.DATA_DIR.resolve())
     except (ValueError, OSError):
         is_local = False
-    cache_hdr = {"Cache-Control": "private, max-age=300"}
+    cache_hdr = {"Cache-Control": "no-store"}
     if is_local:
         return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
     cache_path = _clip_cache_path(path)
@@ -416,7 +416,7 @@ def api_stream_clip(path: str, background_tasks: BackgroundTasks):
         is_local = path_obj.resolve().is_relative_to(config.DATA_DIR.resolve())
     except (ValueError, OSError):
         is_local = False
-    cache_hdr = {"Cache-Control": "private, max-age=300"}
+    cache_hdr = {"Cache-Control": "no-store"}
     if is_local:
         return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
     cache_path = _clip_cache_path(path)

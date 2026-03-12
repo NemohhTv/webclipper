@@ -910,7 +910,8 @@
     const API = '/api';
     const STREAM_V = 2;
     function streamUrl(u) {
-      return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'v=' + STREAM_V;
+      const sep = u.indexOf('?') >= 0 ? '&' : '?';
+      return u + sep + 'v=' + STREAM_V + '&_=' + Date.now();
     }
 
     // --- State ---
