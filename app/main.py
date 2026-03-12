@@ -334,7 +334,7 @@ def api_stream_preview(path: str):
         raise HTTPException(404, "Preview not ready")
     ext = Path(preview_path).suffix.lower()
     media_type = "video/webm" if ext == ".webm" else "video/mp4"
-    return FileResponse(preview_path, media_type=media_type, headers={"Cache-Control": "no-store"})
+    return FileResponse(preview_path, media_type=media_type, headers={"Cache-Control": "private, max-age=300"})
 
 
 @router.get("/api/stream/recording")
@@ -353,13 +353,14 @@ def api_stream_recording(path: str, background_tasks: BackgroundTasks):
         is_local = path_obj.resolve().is_relative_to(config.DATA_DIR.resolve())
     except (ValueError, OSError):
         is_local = False
+    cache_hdr = {"Cache-Control": "private, max-age=300"}
     if is_local:
-        return FileResponse(path, media_type="video/mp4", headers={"Cache-Control": "no-store"})
+        return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
     cache_path = _clip_cache_path(path)
     if cache_path.exists():
-        return FileResponse(cache_path, media_type="video/mp4", headers={"Cache-Control": "no-store"})
+        return FileResponse(cache_path, media_type="video/mp4", headers=cache_hdr)
     background_tasks.add_task(_copy_clip_to_cache, path, cache_path)
-    return FileResponse(path, media_type="video/mp4", headers={"Cache-Control": "no-store"})
+    return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
 
 
 def _clip_cache_path(source_path: str) -> Path:
@@ -415,14 +416,14 @@ def api_stream_clip(path: str, background_tasks: BackgroundTasks):
         is_local = path_obj.resolve().is_relative_to(config.DATA_DIR.resolve())
     except (ValueError, OSError):
         is_local = False
-    no_store = {"Cache-Control": "no-store"}
+    cache_hdr = {"Cache-Control": "private, max-age=300"}
     if is_local:
-        return FileResponse(path, media_type="video/mp4", headers=no_store)
+        return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
     cache_path = _clip_cache_path(path)
     if cache_path.exists():
-        return FileResponse(cache_path, media_type="video/mp4", headers=no_store)
+        return FileResponse(cache_path, media_type="video/mp4", headers=cache_hdr)
     background_tasks.add_task(_copy_clip_to_cache, path, cache_path)
-    return FileResponse(path, media_type="video/mp4", headers=no_store)
+    return FileResponse(path, media_type="video/mp4", headers=cache_hdr)
 
 
 @router.get("/api/clips/download")
