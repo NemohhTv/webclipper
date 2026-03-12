@@ -99,6 +99,10 @@ def is_browser_safe(path: str, info: dict[str, Any] | None = None) -> tuple[bool
     if "mp4" in fmt_name or "mov" in fmt_name:
         if vcodec in ("h264", "hevc", "av1") and _audio_ok(streams):
             return True, "direct"
+    # WebM (VP8/VP9/AV1 + Vorbis/Opus) is natively supported in modern browsers
+    if "webm" in fmt_name:
+        if vcodec in ("vp8", "vp9", "av1") and _audio_ok(streams):
+            return True, "direct"
     return False, "container or codec not browser-safe"
 
 
@@ -108,7 +112,7 @@ def _audio_ok(streams: list[dict]) -> bool:
         return True
     for a in audios:
         c = (a.get("codec_name") or "").lower()
-        if c not in ("aac", "mp3", "opus", "flac"):
+        if c not in ("aac", "mp3", "opus", "flac", "vorbis"):
             return False
     return True
 

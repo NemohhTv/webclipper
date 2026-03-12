@@ -325,14 +325,16 @@ def _stream_file(path: str, media_type: str = "video/mp4"):
 
 @router.get("/api/stream/preview")
 def api_stream_preview(path: str):
-    """Stream preview file (may be cached remux/transcode)."""
+    """Stream preview file (may be cached remux/transcode, or direct for WebM/MP4)."""
     info = recordings.get_recording_by_path(path)
     if not info:
         raise HTTPException(404, "Not found")
     preview_path, _ = ensure_preview(path)
     if not preview_path:
         raise HTTPException(404, "Preview not ready")
-    return FileResponse(preview_path, media_type="video/mp4")
+    ext = Path(preview_path).suffix.lower()
+    media_type = "video/webm" if ext == ".webm" else "video/mp4"
+    return FileResponse(preview_path, media_type=media_type)
 
 
 @router.get("/api/stream/recording")

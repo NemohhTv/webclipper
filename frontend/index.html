@@ -1190,16 +1190,21 @@
         video.removeEventListener('error', onVideoError);
       }
       function onVideoError() {
-        if (!isMkv) return;
-        showEditorLoadingPreview(true);
-        if (editorPreviewRetryCount >= EDITOR_PREVIEW_RETRY_MAX) {
+        if (isMkv) {
+          showEditorLoadingPreview(true);
+          if (editorPreviewRetryCount >= EDITOR_PREVIEW_RETRY_MAX) {
+            showEditorLoadingPreview(false);
+            msgEl.style.display = 'block';
+            video.src = '';
+            return;
+          }
+          editorPreviewRetryCount++;
+          setTimeout(() => trySetPreviewUrl(path, video, msgEl, onVideoCanPlay, onVideoError), 3000);
+        } else {
           showEditorLoadingPreview(false);
+          msgEl.querySelector('p').textContent = 'Video failed to load. Check the file or connection.';
           msgEl.style.display = 'block';
-          video.src = '';
-          return;
         }
-        editorPreviewRetryCount++;
-        setTimeout(() => trySetPreviewUrl(path, video, msgEl, onVideoCanPlay, onVideoError), 3000);
       }
 
       try {
