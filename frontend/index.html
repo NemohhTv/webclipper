@@ -407,6 +407,39 @@
     }
     .editor-loading-preview.hidden { display: none; }
     .editor-loading-preview .loading-text { font-size: 1rem; }
+    #editor-creating-clip-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(13, 17, 23, 0.92);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 100;
+      border-radius: var(--radius);
+    }
+    #editor-creating-clip-overlay.visible { display: flex; }
+    #editor-creating-clip-overlay .loading-text { font-size: 1.1rem; color: var(--accent); }
+    #editor-creating-clip-overlay .loading-bar-wrap {
+      width: 60%;
+      max-width: 320px;
+      height: 8px;
+      background: var(--bg-elevated);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #editor-creating-clip-overlay .loading-bar-fill {
+      height: 100%;
+      width: 40%;
+      background: var(--accent);
+      border-radius: 4px;
+      animation: creating-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes creating-pulse {
+      0%, 100% { transform: translateX(-100%); }
+      50% { transform: translateX(250%); }
+    }
     .editor-loading-preview .loading-bar-wrap {
       width: 60%;
       max-width: 320px;
@@ -791,6 +824,11 @@
         </div>
         <button class="btn btn-primary" id="editor-create-clip">Create clip</button>
       </div>
+    </div>
+    <div id="editor-creating-clip-overlay" class="editor-creating-overlay">
+      <span class="loading-text">Creating clip…</span>
+      <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
+      <span class="editor-time">This may take a minute for long clips.</span>
     </div>
     <div class="editor-timeline-row">
       <div class="editor-controls-bar">
@@ -1299,6 +1337,24 @@
       }
     });
 
+    function showCreatingClipOverlay(show) {
+      const el = document.getElementById('editor-creating-clip-overlay');
+      if (el) el.classList.toggle('visible', !!show);
+    }
+    function showClipsToast(message) {
+      const view = document.getElementById('view-clips');
+      let toast = view.querySelector('.clips-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'clips-toast';
+        toast.style.cssText = 'position:absolute;top:12px;left:50%;transform:translateX(-50%);padding:12px 20px;background:var(--success);color:var(--bg-deep);border-radius:var(--radius);font-weight:500;z-index:10;box-shadow:var(--shadow);';
+        view.style.position = 'relative';
+        view.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 4000);
+    }
     async function doCreateClip() {
       if (!currentEditorRecording) return;
       const indices = [];
@@ -1320,13 +1376,23 @@
         selected_audio_indices: indices,
         gains,
       };
+      showCreatingClipOverlay(true);
       try {
-        await fetch(API + '/clips/create', { method: 'POST', body: JSON.stringify(payload) });
+        const r = await fetch(API + '/clips/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const text = await r.text();
+        if (!r.ok) throw new Error(text || r.statusText);
+        showCreatingClipOverlay(false);
         document.getElementById('editor-modal').classList.remove('open');
-        loadRecordings();
+        await loadClips();
         document.querySelector('.tab[data-tab="clips"]').click();
+        showClipsToast('Clip created and saved to Clips.');
       } catch (e) {
-        alert('Export failed: ' + e.message);
+        showCreatingClipOverlay(false);
+        alert('Export failed: ' + (e.message || e));
       }
     }
     document.getElementById('editor-create-clip').addEventListener('click', () => doCreateClip());
@@ -1379,9 +1445,18 @@
       const paths = [...selectedClipPaths];
       if (paths.length === 0) { alert('Select clips to delete.'); return; }
       if (!confirm(`Delete ${paths.length} clip(s)?`)) return;
-      await fetch(API + '/clips', { method: 'DELETE', body: JSON.stringify({ paths }) });
-      selectedClipPaths.clear();
-      loadClips();
+      try {
+        const r = await fetch(API + '/clips', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        selectedClipPaths.clear();
+        await loadClips();
+      } catch (err) {
+        alert('Failed to delete clips: ' + (err.message || err));
+      }
     });
 
     // --- Settings ---
