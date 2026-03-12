@@ -294,6 +294,21 @@ def api_stream_clip(path: str):
     return FileResponse(path, media_type="video/mp4")
 
 
+@router.get("/api/clips/download")
+def api_download_clip(path: str):
+    """Download a clip file (Content-Disposition: attachment)."""
+    clips = clips_store.list_clips()
+    if not any(c["path"] == path for c in clips):
+        raise HTTPException(404, "Clip not found")
+    path_obj = Path(path)
+    filename = path_obj.name or "clip.mp4"
+    return FileResponse(
+        path,
+        media_type="video/mp4",
+        filename=filename,
+    )
+
+
 # --- App mount ---
 
 def create_app():

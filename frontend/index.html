@@ -511,6 +511,32 @@
       pointer-events: none;
       min-width: 2px;
     }
+    .editor-timeline-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 12px;
+      cursor: ew-resize;
+      z-index: 3;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+    }
+    .editor-timeline-handle:hover { background: #fff; }
+    .editor-timeline-handle-start { left: 0; margin-left: -6px; }
+    .editor-timeline-handle-end { left: 100%; margin-left: -6px; }
+    .editor-audio-track-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .editor-audio-track-row label { flex: 1; margin: 0; }
+    .editor-audio-track-row input[type="range"] {
+      width: 80px;
+      flex-shrink: 0;
+      accent-color: var(--accent);
+    }
     .editor-timeline-playhead {
       position: absolute;
       top: 0;
@@ -779,6 +805,8 @@
       <div class="editor-timeline-track-wrap">
         <div class="editor-timeline-track" id="editor-timeline-track" title="Click to seek">
           <div class="editor-timeline-highlight" id="editor-timeline-highlight"></div>
+          <div class="editor-timeline-handle editor-timeline-handle-start" id="editor-timeline-handle-start" title="Drag to set start"></div>
+          <div class="editor-timeline-handle editor-timeline-handle-end" id="editor-timeline-handle-end" title="Drag to set end"></div>
           <div class="editor-timeline-playhead" id="editor-timeline-playhead"></div>
         </div>
         <div class="editor-timeline-marks" id="editor-timeline-marks"></div>
@@ -1080,11 +1108,22 @@
       const audioTracks = info.probe?.audio_tracks || [];
       const wrap = document.getElementById('editor-audio-tracks');
       wrap.innerHTML = audioTracks.map((a, i) => `
-        <label style="display:block;margin-bottom:6px;">
-          <input type="checkbox" class="editor-audio-cb" data-index="${i}" checked />
-          Track ${i + 1}: ${a.codec || 'audio'} ${a.channels ? a.channels + 'ch' : ''}
-        </label>
+        <div class="editor-audio-track-row">
+          <label>
+            <input type="checkbox" class="editor-audio-cb" data-index="${i}" checked />
+            Track ${i + 1}: ${a.codec || 'audio'} ${a.channels ? a.channels + 'ch' : ''}
+          </label>
+          <input type="range" class="editor-audio-gain" data-index="${i}" min="0" max="200" value="100" title="Volume %" />
+          <span class="editor-time editor-audio-gain-val" data-index="${i}">100%</span>
+        </div>
       `).join('') || '<p class="editor-time">No audio tracks</p>';
+      wrap.querySelectorAll('.editor-audio-gain').forEach(slider => {
+        slider.addEventListener('input', () => {
+          const val = slider.value;
+          const el = wrap.querySelector('.editor-audio-gain-val[data-index="' + slider.dataset.index + '"]');
+          if (el) el.textContent = val + '%';
+        });
+      });
 
       video.onseeked = () => updateEditorTimeDisplay();
       video.ontimeupdate = () => updateEditorTimeDisplay();
@@ -1119,12 +1158,16 @@
     function updateEditorTimelineHighlight() {
       const highlight = document.getElementById('editor-timeline-highlight');
       const playhead = document.getElementById('editor-timeline-playhead');
+      const handleStart = document.getElementById('editor-timeline-handle-start');
+      const handleEnd = document.getElementById('editor-timeline-handle-end');
       if (!highlight || !playhead) return;
       const duration = Math.max(editorDuration, 0.01);
       const startPct = (editorStart / duration) * 100;
       const endPct = (editorEnd / duration) * 100;
       highlight.style.left = startPct + '%';
       highlight.style.width = (endPct - startPct) + '%';
+      if (handleStart) handleStart.style.left = startPct + '%';
+      if (handleEnd) handleEnd.style.left = endPct + '%';
       const video = document.getElementById('editor-video');
       const t = video ? video.currentTime : 0;
       playhead.style.left = Math.min(100, (t / duration) * 100) + '%';
@@ -1169,16 +1212,50 @@
       document.getElementById('editor-video').currentTime = parseFloat(e.target.value);
     });
 
-    document.getElementById('editor-timeline-track').addEventListener('click', e => {
-      const track = e.currentTarget;
-      const rect = track.getBoundingClientRect();
+    let timelineDragging = null;
+    function secFromTrackEvent(e, trackEl) {
+      const rect = trackEl.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const pct = Math.max(0, Math.min(1, x / rect.width));
-      const t = pct * editorDuration;
+      return pct * editorDuration;
+    }
+    document.getElementById('editor-timeline-track').addEventListener('click', e => {
+      if (timelineDragging) return;
+      if (e.target.closest('.editor-timeline-handle')) return;
+      const track = e.currentTarget;
+      const t = secFromTrackEvent(e, track);
       document.getElementById('editor-video').currentTime = t;
       document.getElementById('editor-seek').value = t;
       updateEditorTimeDisplay();
     });
+    function setupTimelineHandle(handleId, setStart) {
+      const track = document.getElementById('editor-timeline-track');
+      const handle = document.getElementById(handleId);
+      if (!handle || !track) return;
+      handle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        timelineDragging = setStart ? 'start' : 'end';
+        const onMove = (e2) => {
+          const sec = secFromTrackEvent(e2, track);
+          if (timelineDragging === 'start') {
+            editorStart = Math.max(0, Math.min(editorEnd - 0.1, sec));
+          } else {
+            editorEnd = Math.min(editorDuration, Math.max(editorStart + 0.1, sec));
+          }
+          updateEditorTrimDisplay();
+        };
+        const onUp = () => {
+          timelineDragging = null;
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    }
+    setupTimelineHandle('editor-timeline-handle-start', true);
+    setupTimelineHandle('editor-timeline-handle-end', false);
 
     document.getElementById('editor-play').addEventListener('click', () => {
       const v = document.getElementById('editor-video');
@@ -1226,6 +1303,11 @@
       if (!currentEditorRecording) return;
       const indices = [];
       document.querySelectorAll('.editor-audio-cb:checked').forEach(cb => indices.push(parseInt(cb.dataset.index, 10)));
+      const gains = {};
+      document.querySelectorAll('.editor-audio-gain').forEach(slider => {
+        const idx = slider.dataset.index;
+        gains[idx] = parseFloat(slider.value) / 100;
+      });
       const payload = {
         source_path: currentEditorRecording.path,
         clip_title: document.getElementById('editor-clip-title').value,
@@ -1236,7 +1318,7 @@
         output_container: document.getElementById('editor-container').value,
         audio_mode: document.getElementById('editor-audio-mode').value,
         selected_audio_indices: indices,
-        gains: {},
+        gains,
       };
       try {
         await fetch(API + '/clips/create', { method: 'POST', body: JSON.stringify(payload) });
@@ -1276,7 +1358,7 @@
               <div class="card-meta">${clip.size_human} · ${formatDate(clip.modified_iso)}</div>
               <div class="card-actions">
                 <a class="btn btn-ghost" href="${API + '/stream/clip?path=' + encodeURIComponent(clip.path)}" target="_blank">Play</a>
-                <a class="btn btn-ghost" href="${API + '/stream/clip?path=' + encodeURIComponent(clip.path)}" download>Download</a>
+                <a class="btn btn-ghost btn-download-clip" href="${API + '/clips/download?path=' + encodeURIComponent(clip.path)}" download="${escapeHtml((clip.title || clip.name || 'clip') + '.mp4')}">Download</a>
               </div>
             </div>
           </div>
@@ -1318,8 +1400,19 @@
       `).join('') || '<li class="editor-time">No sources. Add one below.</li>';
       ul.querySelectorAll('.btn-delete-source').forEach(btn => {
         btn.addEventListener('click', async () => {
-          await fetch(API + '/sources', { method: 'DELETE', body: JSON.stringify({ path: btn.dataset.path }) });
-          loadSettings();
+          const path = btn.dataset.path;
+          if (!confirm('Remove this source?')) return;
+          try {
+            const r = await fetch(API + '/sources', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ path }),
+            });
+            if (!r.ok) throw new Error(await r.text());
+            await loadSettings();
+          } catch (err) {
+            alert('Failed to remove source: ' + (err.message || err));
+          }
         });
       });
 
@@ -1340,10 +1433,20 @@
     }));
 
     document.getElementById('browse-clips-folder').addEventListener('click', () => {
-      const display = document.getElementById('clips-folder-display').textContent;
+      const display = document.getElementById('clips-folder-display').textContent.trim();
       openFolderBrowser(display || '/', async (path) => {
-        await fetch(API + '/settings', { method: 'PUT', body: JSON.stringify({ clips_output_folder: path }) });
-        loadSettings();
+        try {
+          const r = await fetch(API + '/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clips_output_folder: path }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          await loadSettings();
+        } catch (err) {
+          alert('Failed to save clips folder: ' + (err.message || err));
+          return;
+        }
       });
     });
 
