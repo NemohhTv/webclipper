@@ -1,12 +1,10 @@
 """FFprobe and FFmpeg helpers: duration, streams, thumbnails, preview, clip export, remux."""
 from __future__ import annotations
 
-import asyncio
 import os
 import re
 import subprocess
 import threading
-import uuid
 from pathlib import Path
 from typing import Any, Callable
 
@@ -233,7 +231,8 @@ def create_clip(
     if info.get("error"):
         return False, info["error"]
     audio_streams = info.get("audio_streams") or []
-    out_path = str(Path(out_path).with_suffix(f".{container}" if not Path(out_path).suffix else out_path))
+    if not Path(out_path).suffix:
+        out_path = str(Path(out_path).with_suffix(f".{container}"))
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     if mode == "fast_cut":
         # Stream copy; trim may be keyframe-bound

@@ -1690,10 +1690,10 @@
     });
 
     document.getElementById('auto-refresh').addEventListener('change', e => {
-      fetch(API + '/settings', { method: 'PUT', body: JSON.stringify({ auto_refresh: e.target.checked }) });
+      fetch(API + '/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ auto_refresh: e.target.checked }) });
     });
     document.getElementById('refresh-interval').addEventListener('change', e => {
-      fetch(API + '/settings', { method: 'PUT', body: JSON.stringify({ refresh_interval_seconds: parseInt(e.target.value, 10) }) });
+      fetch(API + '/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_interval_seconds: parseInt(e.target.value, 10) }) });
     });
 
     // --- Folder browser ---

@@ -1,7 +1,6 @@
 """FastAPI app: config, sources, recordings, preview, clips, remux jobs, folder browser."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote

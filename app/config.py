@@ -11,7 +11,6 @@ CONFIG_PATH = DATA_DIR / "config.json"
 CLIPS_DIR = DATA_DIR / "clips"
 THUMBNAILS_DIR = DATA_DIR / "thumbnails"
 PREVIEW_DIR = DATA_DIR / "preview"
-CLIP_CACHE_DIR = PREVIEW_DIR / "clip_cache"  # local cache for streaming clips (e.g. from NAS)
 
 DEFAULT_CONFIG = {
     "sources": [],
@@ -29,7 +28,6 @@ def ensure_dirs() -> None:
     CLIPS_DIR.mkdir(parents=True, exist_ok=True)
     THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
-    CLIP_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_config() -> dict[str, Any]:
