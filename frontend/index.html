@@ -907,6 +907,10 @@
 
   <script>
     const API = '/api';
+    const STREAM_V = 2;
+    function streamUrl(u) {
+      return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'v=' + STREAM_V;
+    }
 
     // --- State ---
     let recordingsList = [];
@@ -1232,7 +1236,7 @@
       try {
         const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
         if (preview.url) {
-          const url = preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url);
+          const url = streamUrl(preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url));
           video.addEventListener('loadeddata', onVideoCanPlay);
           video.addEventListener('canplay', onVideoCanPlay);
           video.addEventListener('error', onVideoError);
@@ -1241,7 +1245,7 @@
           showEditorLoadingPreview(false);
           msgEl.style.display = 'block';
         } else {
-          video.src = window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path);
+          video.src = streamUrl(window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path));
           video.addEventListener('loadeddata', onVideoCanPlay);
           video.addEventListener('canplay', onVideoCanPlay);
           video.addEventListener('error', onVideoError);
@@ -1250,7 +1254,7 @@
         showEditorLoadingPreview(false);
         if (isMkv) msgEl.style.display = 'block';
         else {
-          video.src = window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path);
+          video.src = streamUrl(window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path));
           video.addEventListener('loadeddata', onVideoCanPlay);
           video.addEventListener('error', onVideoError);
         }
@@ -1306,7 +1310,7 @@
       video.addEventListener('loadeddata', () => showEditorLoadingPreview(false));
       video.addEventListener('canplay', () => showEditorLoadingPreview(false));
       video.addEventListener('error', () => { showEditorLoadingPreview(false); });
-      video.src = window.location.origin + API + '/stream/clip?path=' + encodeURIComponent(clipPath);
+      video.src = streamUrl(window.location.origin + API + '/stream/clip?path=' + encodeURIComponent(clipPath));
       try {
         const info = await fetchJSON(API + '/clips/info?path=' + encodeURIComponent(clipPath));
         const probe = info.probe || {};
@@ -1603,7 +1607,7 @@
               <div class="card-meta">${clip.size_human} · ${formatDate(clip.modified_iso)}</div>
               <div class="card-actions">
                 <button type="button" class="btn btn-ghost btn-preview-clip" data-path="${escapeHtml(clip.path)}" data-name="${escapeHtml(clip.title || clip.name || '')}">Preview</button>
-                <a class="btn btn-ghost" href="${API + '/stream/clip?path=' + encodeURIComponent(clip.path)}" target="_blank">Play</a>
+                <a class="btn btn-ghost" href="${streamUrl(API + '/stream/clip?path=' + encodeURIComponent(clip.path))}" target="_blank">Play</a>
                 <a class="btn btn-ghost btn-download-clip" href="${API + '/clips/download?path=' + encodeURIComponent(clip.path)}" download="${escapeHtml((clip.title || clip.name || 'clip') + '.mp4')}">Download</a>
               </div>
             </div>
