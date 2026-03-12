@@ -457,10 +457,12 @@ def create_app():
     frontend = Path(__file__).resolve().parent.parent / "frontend"
     index_file = frontend / "index.html"
 
+    html_headers = {"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
+
     @app.get("/")
     def index():
         if index_file.exists():
-            return FileResponse(index_file, media_type="text/html")
+            return FileResponse(index_file, media_type="text/html", headers=html_headers)
         return {"app": "WebClipper", "docs": "/docs"}
 
     @app.get("/{path:path}")
@@ -468,7 +470,7 @@ def create_app():
         if path.startswith("api"):
             raise HTTPException(404, "Not found")
         if index_file.exists():
-            return FileResponse(index_file, media_type="text/html")
+            return FileResponse(index_file, media_type="text/html", headers=html_headers)
         raise HTTPException(404, "Not found")
 
     return app

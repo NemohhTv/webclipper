@@ -5,6 +5,7 @@ import asyncio
 import os
 import re
 import subprocess
+import threading
 import uuid
 from pathlib import Path
 from typing import Any, Callable
@@ -362,22 +363,27 @@ def remux_mkv_to_mp4(
             text=True,
             bufsize=1,
         )
-        last_pct = -1.0
+        last_pct = [-1.0]  # mutable so reader thread can update
         assert proc.stderr is not None
-        buf = ""
-        while True:
-            chunk = proc.stderr.read(512)
-            if not chunk:
-                break
-            buf += chunk
-            for line in buf.replace("\r", "\n").split("\n"):
-                t = _parse_ffmpeg_time(line)
-                if t is not None and duration_sec > 0:
-                    pct = min(100.0, 100.0 * t / duration_sec)
-                    if pct >= last_pct + 0.5 or pct >= 99.5:
-                        last_pct = pct
-                        progress_callback(pct)
-            buf = buf[buf.rfind("\n") + 1:] if "\n" in buf else buf[-200:]
+
+        def read_stderr() -> None:
+            buf = ""
+            while True:
+                chunk = proc.stderr.read(512)
+                if not chunk:
+                    break
+                buf += chunk
+                for line in buf.replace("\r", "\n").split("\n"):
+                    t = _parse_ffmpeg_time(line)
+                    if t is not None and duration_sec > 0:
+                        pct = min(100.0, 100.0 * t / duration_sec)
+                        if pct >= last_pct[0] + 0.5 or pct >= 99.5:
+                            last_pct[0] = pct
+                            progress_callback(pct)
+                buf = buf[buf.rfind("\n") + 1:] if "\n" in buf else buf[-200:]
+
+        reader = threading.Thread(target=read_stderr, daemon=True)
+        reader.start()
         proc.wait(timeout=600)
         if proc.returncode == 0:
             progress_callback(100.0)

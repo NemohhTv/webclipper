@@ -1364,7 +1364,7 @@
       try {
         const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
         if (preview.url) {
-          const url = preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url);
+          const url = streamUrl(preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url));
           video.src = url;
         }
       } catch (e) {
