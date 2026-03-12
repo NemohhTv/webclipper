@@ -303,117 +303,100 @@
     .modal-close:hover { color: var(--text); }
     .modal-body { flex: 1; overflow: auto; padding: 20px; }
 
-    /* Editor layout */
-    .editor-layout {
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 24px;
-      min-height: 400px;
-    }
-    /* Full-page editor: takes entire viewport */
-    .modal-overlay.editor-fullpage-wrap {
-      padding: 0;
-      align-items: stretch;
-      justify-content: stretch;
-    }
-    .editor-fullpage-wrap .editor-fullpage {
-      width: 100vw;
-      height: 100vh;
-      max-width: none;
-      max-height: none;
-      display: flex;
-      flex-direction: column;
+    /* ===== EDITOR: full-screen overlay ===== */
+    #editor-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
       background: var(--bg-card);
-      border-radius: 0;
+      display: none;
+      flex-direction: column;
     }
-    .editor-fullpage .editor-header {
+    #editor-modal.open {
+      display: flex;
+    }
+    .editor-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 20px;
+      padding: 10px 20px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      background: var(--bg-card);
+      z-index: 1;
     }
-    .editor-fullpage .editor-body-row {
+    .editor-header .modal-title {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .editor-header .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+    .editor-header .modal-close:hover { color: var(--text); }
+    .editor-body-row {
       flex: 1;
       display: flex;
       min-height: 0;
       overflow: hidden;
     }
-    .editor-fullpage .editor-video-section {
+    .editor-video-section {
       flex: 1;
       min-width: 0;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
       padding: 16px;
-      overflow: auto;
+      background: #000;
       position: relative;
     }
-    .editor-fullpage .editor-video-wrap {
+    .editor-video-wrap {
+      width: 100%;
+      max-width: 100%;
       flex: 1;
-      min-height: 200px;
-      max-height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      aspect-ratio: 16/9;
-      align-self: center;
-      width: 100%;
-      max-width: 100%;
-    }
-    .editor-fullpage .editor-sidebar {
-      width: 320px;
-      flex-shrink: 0;
-      overflow-y: auto;
-      padding: 16px;
-    }
-    .editor-fullpage .editor-timeline-row {
-      flex-shrink: 0;
-      border-top: 1px solid var(--border);
-      padding: 12px 20px;
-      background: var(--bg-elevated);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .editor-fullpage .editor-timeline-row .editor-trim-row {
-      padding: 0;
-      background: transparent;
-      border: none;
-      flex-wrap: wrap;
-    }
-    .editor-fullpage .editor-timeline-row .editor-trim-row .btn-primary {
-      margin-left: auto;
-    }
-    .editor-video-section { min-width: 0; }
-    .editor-video-wrap {
-      background: #000;
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      aspect-ratio: 16/9;
-      margin-bottom: 16px;
       position: relative;
+      min-height: 0;
     }
     .editor-video-wrap video {
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
       display: block;
       object-fit: contain;
+      border-radius: 4px;
     }
     .editor-preview-message {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 16px;
-      margin-bottom: 12px;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(0,0,0,0.85);
       color: var(--text-muted);
+      z-index: 3;
+      padding: 24px;
+      text-align: center;
     }
-    .editor-preview-message p { margin: 0 0 12px 0; }
-    /* Loading preview overlay (MKV / generating) */
+    .editor-preview-message p { margin: 0 0 8px 0; }
     .editor-loading-preview {
       position: absolute;
       inset: 0;
-      background: var(--bg-deep);
+      background: #000;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -425,58 +408,97 @@
     .editor-loading-preview.hidden { display: none; }
     .editor-loading-preview .loading-text { font-size: 1rem; }
     .editor-loading-preview .loading-bar-wrap {
-      width: 80%;
+      width: 60%;
       max-width: 320px;
-      height: 8px;
+      height: 6px;
       background: var(--border);
-      border-radius: 4px;
+      border-radius: 3px;
       overflow: hidden;
     }
     .editor-loading-preview .loading-bar-fill {
       height: 100%;
       width: 40%;
       background: var(--accent);
-      border-radius: 4px;
-      animation: loading-bar 1.2s ease-in-out infinite;
+      border-radius: 3px;
+      animation: loading-bar 1.4s ease-in-out infinite;
     }
     @keyframes loading-bar {
       0%, 100% { transform: translateX(-100%); }
       50% { transform: translateX(350%); }
     }
-    .editor-timeline {
+
+    /* Editor sidebar (RIGHT) */
+    .editor-sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg-card);
+      border-left: 1px solid var(--border);
+    }
+    .editor-sidebar .field { margin-bottom: 14px; }
+    .editor-sidebar label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    .editor-sidebar input[type="text"],
+    .editor-sidebar select {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    .editor-sidebar .btn-primary { width: 100%; margin-top: 12px; }
+
+    /* Editor timeline (BOTTOM) */
+    .editor-timeline-row {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      padding: 10px 20px;
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .editor-controls-bar {
       display: flex;
       align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
+      gap: 10px;
     }
-    .editor-timeline .btn-ghost { padding: 6px 10px; font-size: 0.85rem; }
+    .editor-controls-bar .btn-ghost { padding: 5px 10px; font-size: 0.85rem; }
     .editor-time {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: var(--text-muted);
+      white-space: nowrap;
     }
-    .editor-range-wrap {
+    .editor-seek-wrap {
       flex: 1;
-      min-width: 200px;
+      min-width: 80px;
     }
-    .editor-range-wrap input[type="range"] {
+    .editor-seek-wrap input[type="range"] {
       width: 100%;
-      height: 8px;
+      height: 6px;
       accent-color: var(--accent);
     }
-    .editor-trim-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    /* Segus-style timeline: track with yellow highlight segment */
+    /* Timeline track with yellow highlight */
     .editor-timeline-track-wrap {
       width: 100%;
-      margin: 8px 0;
     }
     .editor-timeline-track {
       position: relative;
-      height: 32px;
+      height: 28px;
       background: var(--bg-deep);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: 4px;
       cursor: pointer;
       overflow: hidden;
     }
@@ -485,8 +507,7 @@
       top: 0;
       bottom: 0;
       background: var(--accent);
-      opacity: 0.85;
-      border-radius: 2px;
+      opacity: 0.9;
       pointer-events: none;
       min-width: 2px;
     }
@@ -496,41 +517,33 @@
       bottom: 0;
       width: 2px;
       background: #fff;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
       pointer-events: none;
       z-index: 2;
     }
     .editor-timeline-marks {
       display: flex;
       justify-content: space-between;
-      margin-top: 4px;
+      margin-top: 3px;
       padding: 0 2px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       color: var(--text-muted);
+      overflow: hidden;
+      max-width: 100%;
     }
-    .editor-sidebar {
-      border-left: 1px solid var(--border);
-      padding-left: 24px;
+    .editor-timeline-marks span {
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .editor-sidebar .field { margin-bottom: 16px; }
-    .editor-sidebar label {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
+
+    /* Trim controls */
+    .editor-trim-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    .editor-sidebar input[type="text"],
-    .editor-sidebar select {
-      width: 100%;
-      padding: 8px 12px;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-family: inherit;
-    }
-    .editor-sidebar .btn-primary { width: 100%; margin-top: 8px; }
+    .editor-trim-bar .btn-primary { margin-left: auto; }
 
     /* Clips grid (reuse card styles) */
     .clip-card .card-actions { flex-direction: row; }
@@ -696,89 +709,86 @@
     </div>
   </div>
 
-  <!-- Editor full page (full-screen with bottom timeline) -->
-  <div id="editor-modal" class="modal-overlay editor-fullpage-wrap">
-    <div class="editor-fullpage">
-      <div class="editor-header">
-        <span class="modal-title" id="editor-title">Edit clip</span>
-        <button class="modal-close" id="editor-close">&times;</button>
-      </div>
-      <div class="editor-body-row">
-        <div class="editor-video-section">
-          <div id="editor-preview-unavailable" class="editor-preview-message" style="display:none;">
-            <p>Preview not ready. MKV files are played from cache (remux/transcode). Remux this file first, or wait a moment and open the editor again.</p>
-            <button type="button" class="btn btn-ghost" id="editor-remux-this">Remux this file</button>
-          </div>
-          <div class="editor-video-wrap">
-            <div id="editor-loading-preview" class="editor-loading-preview hidden">
-              <span class="loading-text">Loading preview…</span>
-              <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
-            </div>
-            <video id="editor-video" controls></video>
-          </div>
+  <!-- Editor: full-screen overlay -->
+  <div id="editor-modal">
+    <div class="editor-header">
+      <span class="modal-title" id="editor-title">Edit clip</span>
+      <button class="modal-close" id="editor-close">&times;</button>
+    </div>
+    <div class="editor-body-row">
+      <div class="editor-video-section">
+        <div id="editor-preview-unavailable" class="editor-preview-message" style="display:none;">
+          <p>Preview not ready. MKV files need to be remuxed first.</p>
+          <button type="button" class="btn btn-ghost" id="editor-remux-this">Remux this file</button>
         </div>
-        <div class="editor-sidebar">
-            <div class="field">
-              <label>Clip title</label>
-              <input type="text" id="editor-clip-title" placeholder="My clip" />
-            </div>
-            <div class="field">
-              <label>Game name</label>
-              <input type="text" id="editor-game" placeholder="Game" />
-            </div>
-            <div class="field">
-              <label>Export mode</label>
-              <select id="editor-export-mode">
-                <option value="fast_cut">Fast Cut / Remux</option>
-                <option value="accurate">Accurate Clip</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Output container</label>
-              <select id="editor-container">
-                <option value="mp4">MP4</option>
-                <option value="mov">MOV</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Audio mode</label>
-              <select id="editor-audio-mode">
-                <option value="separate">Keep tracks separate</option>
-                <option value="mix">Mix into one track</option>
-              </select>
-            </div>
-            <div class="field" id="editor-audio-tracks-wrap">
-              <label>Audio tracks</label>
-              <div id="editor-audio-tracks"></div>
-            </div>
-            <button class="btn btn-primary" id="editor-create-clip">Create clip</button>
+        <div class="editor-video-wrap">
+          <div id="editor-loading-preview" class="editor-loading-preview hidden">
+            <span class="loading-text">Loading preview...</span>
+            <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
           </div>
+          <video id="editor-video" controls></video>
         </div>
       </div>
-      <div class="editor-timeline-row">
-        <div class="editor-timeline">
-          <button class="btn btn-ghost" id="editor-play">Play</button>
-          <button class="btn btn-ghost" id="editor-back5">−5s</button>
-          <button class="btn btn-ghost" id="editor-fwd5">+5s</button>
-          <span class="editor-time" id="editor-time-display">0:00 / 0:00</span>
-          <div class="editor-range-wrap">
-            <input type="range" id="editor-seek" min="0" max="100" value="0" step="0.1" />
-          </div>
+      <div class="editor-sidebar">
+        <div class="field">
+          <label>Clip title</label>
+          <input type="text" id="editor-clip-title" placeholder="My clip" />
         </div>
-        <div class="editor-timeline-track-wrap">
-          <div class="editor-timeline-track" id="editor-timeline-track" title="Click to seek">
-            <div class="editor-timeline-highlight" id="editor-timeline-highlight"></div>
-            <div class="editor-timeline-playhead" id="editor-timeline-playhead"></div>
-          </div>
-          <div class="editor-timeline-marks" id="editor-timeline-marks"></div>
+        <div class="field">
+          <label>Game name</label>
+          <input type="text" id="editor-game" placeholder="Game" />
         </div>
-        <div class="editor-timeline editor-trim-row">
-          <button class="btn btn-ghost" id="editor-set-start">Set Start</button>
-          <button class="btn btn-ghost" id="editor-set-end">Set End</button>
-          <button class="btn btn-ghost" id="editor-clear-trim">Clear Trim</button>
-          <span class="editor-time">Start: <span id="editor-start-val">0</span>s — End: <span id="editor-end-val">0</span>s</span>
-          <button class="btn btn-primary" id="editor-create-clip-timeline">Create Clip</button>
+        <div class="field">
+          <label>Export mode</label>
+          <select id="editor-export-mode">
+            <option value="fast_cut">Fast Cut / Remux</option>
+            <option value="accurate">Accurate Clip</option>
+          </select>
         </div>
+        <div class="field">
+          <label>Output container</label>
+          <select id="editor-container">
+            <option value="mp4">MP4</option>
+            <option value="mov">MOV</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Audio mode</label>
+          <select id="editor-audio-mode">
+            <option value="separate">Keep tracks separate</option>
+            <option value="mix">Mix into one track</option>
+          </select>
+        </div>
+        <div class="field" id="editor-audio-tracks-wrap">
+          <label>Audio tracks</label>
+          <div id="editor-audio-tracks"></div>
+        </div>
+        <button class="btn btn-primary" id="editor-create-clip">Create clip</button>
+      </div>
+    </div>
+    <div class="editor-timeline-row">
+      <div class="editor-controls-bar">
+        <button class="btn btn-ghost" id="editor-play">Play</button>
+        <button class="btn btn-ghost" id="editor-back5">-5s</button>
+        <button class="btn btn-ghost" id="editor-fwd5">+5s</button>
+        <span class="editor-time" id="editor-time-display">0:00 / 0:00</span>
+        <div class="editor-seek-wrap">
+          <input type="range" id="editor-seek" min="0" max="100" value="0" step="0.1" />
+        </div>
+      </div>
+      <div class="editor-timeline-track-wrap">
+        <div class="editor-timeline-track" id="editor-timeline-track" title="Click to seek">
+          <div class="editor-timeline-highlight" id="editor-timeline-highlight"></div>
+          <div class="editor-timeline-playhead" id="editor-timeline-playhead"></div>
+        </div>
+        <div class="editor-timeline-marks" id="editor-timeline-marks"></div>
+      </div>
+      <div class="editor-trim-bar">
+        <button class="btn btn-ghost" id="editor-set-start">Set Start</button>
+        <button class="btn btn-ghost" id="editor-set-end">Set End</button>
+        <button class="btn btn-ghost" id="editor-clear-trim">Clear Trim</button>
+        <span class="editor-time">Start: <span id="editor-start-val">0</span>s — End: <span id="editor-end-val">0</span>s</span>
+        <button class="btn btn-primary" id="editor-create-clip-timeline">Create Clip</button>
       </div>
     </div>
   </div>
@@ -1128,19 +1138,25 @@
         container.innerHTML = '<span>0:00</span>';
         return;
       }
-      const step = duration <= 60 ? 10 : duration <= 300 ? 30 : 60;
+      const maxMarks = 10;
+      let step;
+      if (duration <= 30) step = 5;
+      else if (duration <= 120) step = 15;
+      else if (duration <= 600) step = 60;
+      else if (duration <= 3600) step = 300;
+      else step = 600;
+      while (Math.ceil(duration / step) > maxMarks) step *= 2;
       const marks = [];
-      for (let s = 0; s <= Math.ceil(duration); s += step) {
-        const m = Math.floor(s / 60);
-        const sec = s % 60;
-        marks.push((m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec);
+      for (let s = 0; s <= duration; s += step) {
+        marks.push(fmtMark(s));
       }
-      if (duration % step !== 0) {
-        const m = Math.floor(duration / 60);
-        const sec = Math.floor(duration % 60);
-        marks.push((m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec);
-      }
+      if (duration % step > step * 0.1) marks.push(fmtMark(duration));
       container.innerHTML = marks.map(t => '<span>' + t + '</span>').join('');
+    }
+    function fmtMark(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
     }
 
     function formatTime(sec) {
@@ -1199,8 +1215,11 @@
       document.getElementById('editor-preview-unavailable').style.display = 'none';
       alert('Remux job started. When it finishes, open this file again to use the preview.');
     });
-    document.getElementById('editor-modal').addEventListener('click', e => {
-      if (e.target.id === 'editor-modal') document.getElementById('editor-modal').classList.remove('open');
+    // Close editor on Escape key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('editor-modal').classList.contains('open')) {
+        document.getElementById('editor-modal').classList.remove('open');
+      }
     });
 
     async function doCreateClip() {
