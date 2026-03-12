@@ -813,6 +813,7 @@
             <span class="loading-text">Loading preview...</span>
             <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
             <span id="editor-loading-slow-hint" class="editor-time" style="display:none;margin-top:8px;">Large files or network storage can take a minute. Still loading…</span>
+            <button type="button" id="editor-loading-stop" class="btn btn-ghost" style="display:none;margin-top:12px;">Stop loading</button>
           </div>
           <video id="editor-video" controls></video>
         </div>
@@ -1199,15 +1200,31 @@
       msgEl.style.display = 'none';
       const slowHint = document.getElementById('editor-loading-slow-hint');
       if (slowHint) slowHint.style.display = 'none';
+      const stopBtn = document.getElementById('editor-loading-stop');
+      if (stopBtn) stopBtn.style.display = 'none';
       let loadingSlowTimer = setTimeout(() => {
-        if (slowHint && document.getElementById('editor-loading-preview') && !document.getElementById('editor-loading-preview').classList.contains('hidden')) {
-          slowHint.style.display = 'block';
+        if (document.getElementById('editor-loading-preview') && !document.getElementById('editor-loading-preview').classList.contains('hidden')) {
+          if (slowHint) slowHint.style.display = 'block';
+          if (stopBtn) stopBtn.style.display = 'block';
         }
       }, 20000);
+      if (stopBtn) {
+        stopBtn.onclick = () => {
+          clearTimeout(loadingSlowTimer);
+          if (slowHint) slowHint.style.display = 'none';
+          stopBtn.style.display = 'none';
+          video.removeAttribute('src');
+          video.load();
+          showEditorLoadingPreview(false);
+          msgEl.querySelector('p').textContent = 'Loading stopped. Try again or pick another file.';
+          msgEl.style.display = 'block';
+        };
+      }
 
       function onVideoCanPlay() {
         clearTimeout(loadingSlowTimer);
         if (slowHint) slowHint.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'none';
         showEditorLoadingPreview(false);
         video.removeEventListener('loadeddata', onVideoCanPlay);
         video.removeEventListener('canplay', onVideoCanPlay);
@@ -1216,6 +1233,7 @@
       function onVideoError() {
         clearTimeout(loadingSlowTimer);
         if (slowHint) slowHint.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'none';
         if (isMkv) {
           showEditorLoadingPreview(true);
           if (editorPreviewRetryCount >= EDITOR_PREVIEW_RETRY_MAX) {
