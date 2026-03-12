@@ -801,7 +801,6 @@
       <div class="editor-video-section">
         <div id="editor-preview-unavailable" class="editor-preview-message" style="display:none;">
           <p>Video failed to load. Check the file or connection.</p>
-          <button type="button" class="btn btn-ghost" id="editor-remux-this" style="display:none;">Remux this file</button>
         </div>
         <div class="editor-video-wrap">
           <div id="editor-loading-preview" class="editor-loading-preview hidden">
@@ -1187,12 +1186,9 @@
 
       const video = document.getElementById('editor-video');
       const msgEl = document.getElementById('editor-preview-unavailable');
-      const remuxBtn = document.getElementById('editor-remux-this');
-      const isMkv = (path || '').toLowerCase().endsWith('.mkv');
 
       showEditorLoadingPreview(true);
       msgEl.style.display = 'none';
-      remuxBtn.style.display = isMkv ? '' : 'none';
       const slowHint = document.getElementById('editor-loading-slow-hint');
       if (slowHint) slowHint.style.display = 'none';
       const stopBtn = document.getElementById('editor-loading-stop');
@@ -1230,37 +1226,14 @@
         if (slowHint) slowHint.style.display = 'none';
         if (stopBtn) stopBtn.style.display = 'none';
         showEditorLoadingPreview(false);
-        msgEl.querySelector('p').textContent = isMkv
-          ? 'Preview not ready. MKV files need to be remuxed first.'
-          : 'Video failed to load. Check the file or connection.';
+        msgEl.querySelector('p').textContent = 'Video failed to load. Check the file or connection.';
         msgEl.style.display = 'block';
       }
 
-      if (isMkv) {
-        try {
-          const preview = await fetchJSON(API + '/recordings/preview?path=' + encodeURIComponent(path));
-          if (preview.url) {
-            const url = streamUrl(preview.url.startsWith('http') ? preview.url : (window.location.origin + preview.url));
-            video.addEventListener('loadeddata', onVideoCanPlay);
-            video.addEventListener('canplay', onVideoCanPlay);
-            video.addEventListener('error', onVideoError);
-            video.src = url;
-          } else {
-            showEditorLoadingPreview(false);
-            msgEl.querySelector('p').textContent = 'Preview not ready. MKV files need to be remuxed first.';
-            msgEl.style.display = 'block';
-          }
-        } catch (e) {
-          showEditorLoadingPreview(false);
-          msgEl.querySelector('p').textContent = 'Preview not ready. MKV files need to be remuxed first.';
-          msgEl.style.display = 'block';
-        }
-      } else {
-        video.src = streamUrl(window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path));
-        video.addEventListener('loadeddata', onVideoCanPlay);
-        video.addEventListener('canplay', onVideoCanPlay);
-        video.addEventListener('error', onVideoError);
-      }
+      video.src = streamUrl(window.location.origin + API + '/stream/recording?path=' + encodeURIComponent(path));
+      video.addEventListener('loadeddata', onVideoCanPlay);
+      video.addEventListener('canplay', onVideoCanPlay);
+      video.addEventListener('error', onVideoError);
 
       const info = await fetchJSON(API + '/recordings/info?path=' + encodeURIComponent(path));
       editorDuration = info.probe?.duration || 0;
@@ -1495,12 +1468,6 @@
       document.getElementById('editor-modal').classList.remove('open');
     }
     document.getElementById('editor-close').addEventListener('click', closeEditor);
-    document.getElementById('editor-remux-this').addEventListener('click', () => {
-      if (!currentEditorRecording || !currentEditorRecording.path) return;
-      remuxPaths([currentEditorRecording.path]);
-      document.getElementById('editor-preview-unavailable').style.display = 'none';
-      alert('Remux job started. When it finishes, open this file again to use the preview.');
-    });
     // Close editor on Escape key
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && document.getElementById('editor-modal').classList.contains('open')) {

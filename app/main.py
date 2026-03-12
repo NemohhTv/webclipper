@@ -319,15 +319,17 @@ def api_stream_preview(path: str):
 
 @router.get("/api/stream/recording")
 def api_stream_recording(path: str):
-    """Stream recording file directly."""
+    """Stream recording: MP4 directly, MKV via on-demand preview (remux/transcode)."""
     info = recordings.get_recording_by_path(path)
     if not info:
         raise HTTPException(404, "Not found")
     if Path(path).suffix.lower() == ".mkv":
-        raise HTTPException(
-            400,
-            "MKV files cannot be played directly. Use Remux to convert to MP4.",
-        )
+        preview_path, _ = ensure_preview(path)
+        if not preview_path:
+            raise HTTPException(404, "Preview not ready")
+        ext = Path(preview_path).suffix.lower()
+        media_type = "video/webm" if ext == ".webm" else "video/mp4"
+        return FileResponse(preview_path, media_type=media_type, headers={"Cache-Control": "no-store"})
     path_obj = Path(path)
     if not path_obj.exists() or not path_obj.is_file():
         raise HTTPException(404, "File not found")
