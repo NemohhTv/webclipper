@@ -25,7 +25,7 @@ def scan_recordings(source_filter: str | None = None) -> list[dict[str, Any]]:
         if not base.exists():
             continue
         try:
-            for entry in base.iterdir():
+            for entry in base.rglob("*"):
                 if not entry.is_file():
                     continue
                 if entry.suffix.lower() not in SUPPORTED_EXTENSIONS:
