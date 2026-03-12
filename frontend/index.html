@@ -1129,11 +1129,21 @@
         .catch(() => { pollRemuxJobs(); });
     }
 
+    let remuxRefreshedDoneIds = new Set();
     function pollRemuxJobs() {
       fetchJSON(API + '/jobs').then(data => {
         const list = document.getElementById('remux-jobs-list');
         const jobs = data.jobs || [];
+        const doneOrFailed = jobs.filter(j => j.status === 'done' || j.status === 'failed');
+        if (doneOrFailed.length > 0) {
+          const needRefresh = doneOrFailed.some(j => !remuxRefreshedDoneIds.has(j.id));
+          if (needRefresh) {
+            doneOrFailed.forEach(j => remuxRefreshedDoneIds.add(j.id));
+            loadRecordings();
+          }
+        }
         if (jobs.length === 0) {
+          remuxRefreshedDoneIds.clear();
           list.innerHTML = '<p class="editor-time">No remux jobs.</p>';
           return;
         }
