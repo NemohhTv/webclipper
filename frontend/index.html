@@ -761,6 +761,11 @@
           <button class="btn btn-ghost" id="browse-clips-folder">Browse...</button>
         </div>
         <div class="settings-section">
+          <h3>Clip cache</h3>
+          <p class="text-muted" style="margin-bottom:8px;">Cached copies of clips (e.g. on NAS) for faster preview. Cleared automatically when you delete clips.</p>
+          <button class="btn btn-ghost" id="clear-clip-cache">Clear clip cache</button>
+        </div>
+        <div class="settings-section">
           <h3>Refresh</h3>
           <label><input type="checkbox" id="auto-refresh" /> Auto refresh</label>
           <div style="margin-top:8px;">
@@ -933,6 +938,7 @@
       const data = await fetchJSON(API + '/sources');
       sourcesList = data.sources || [];
       const sel = document.getElementById('source-filter');
+      const currentValue = sel.value || '';
       sel.innerHTML = '<option value="">All Sources</option>';
       sourcesList.forEach(s => {
         const opt = document.createElement('option');
@@ -940,6 +946,9 @@
         opt.textContent = s.label;
         sel.appendChild(opt);
       });
+      if (currentValue && sourcesList.some(s => s.path === currentValue)) {
+        sel.value = currentValue;
+      }
       return sourcesList;
     }
 
@@ -1579,6 +1588,18 @@
         alert('Failed to add source: ' + (err.message || err));
       }
     }));
+
+    document.getElementById('clear-clip-cache').addEventListener('click', async () => {
+      try {
+        const r = await fetch(API + '/clips/cache', { method: 'DELETE' });
+        if (!r.ok) throw new Error(await r.text());
+        const data = await r.json();
+        const n = data.cleared ?? 0;
+        alert(n ? `Cleared ${n} cached file(s).` : 'Clip cache is already empty.');
+      } catch (err) {
+        alert('Failed to clear cache: ' + (err.message || err));
+      }
+    });
 
     document.getElementById('browse-clips-folder').addEventListener('click', () => {
       const display = document.getElementById('clips-folder-display').textContent.trim();
