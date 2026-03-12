@@ -52,6 +52,11 @@ class DeleteRecordingsBody(BaseModel):
     paths: list[str]
 
 
+class RenameRecordingBody(BaseModel):
+    path: str
+    new_name: str
+
+
 class RemuxBody(BaseModel):
     paths: list[str]
 
@@ -188,6 +193,18 @@ def api_delete_recordings(body: DeleteRecordingsBody):
     for path in deleted:
         _remove_clip_from_cache(path)
     return {"deleted": deleted}
+
+
+@router.put("/api/recordings/rename")
+def api_rename_recording(body: RenameRecordingBody):
+    """Rename a recording file on disk. Invalidates stream cache for old path."""
+    try:
+        new_path = recordings.rename_recording(body.path, body.new_name)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    _remove_clip_from_cache(body.path)
+    info = recordings.get_recording_by_path(new_path)
+    return {"path": new_path, "name": info["name"], "recording": info}
 
 
 @router.post("/api/remux")

@@ -106,6 +106,31 @@ def delete_recordings(paths: list[str]) -> list[str]:
     return deleted
 
 
+def rename_recording(path: str, new_name: str) -> str:
+    """Rename a recording file. new_name is the new filename (e.g. 'My Video.mp4'). Returns new path."""
+    rec = get_recording_by_path(path)
+    if not rec:
+        raise ValueError("Recording not found")
+    new_name = (new_name or "").strip()
+    if not new_name:
+        raise ValueError("Name cannot be empty")
+    if "/" in new_name or "\\" in new_name:
+        raise ValueError("Name cannot contain path separators")
+    if new_name in (".", ".."):
+        raise ValueError("Invalid name")
+    p = Path(path)
+    new_path = p.parent / new_name
+    if new_path == p:
+        return path
+    if new_path.exists():
+        raise ValueError("A file with that name already exists")
+    try:
+        p.rename(new_path)
+    except OSError as e:
+        raise ValueError(str(e)) from e
+    return str(new_path.resolve())
+
+
 def thumbnail_path_for_file(file_path: str) -> Path:
     """Path where thumbnail for this recording should be stored."""
     import hashlib

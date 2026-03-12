@@ -248,6 +248,23 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      cursor: text;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .card-title:hover { background: var(--bg-elevated); }
+    .card-title.card-title-editing { padding: 2px 4px; }
+    .card-title-input {
+      width: 100%;
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--bg-elevated);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 4px 6px;
+      box-sizing: border-box;
     }
     .card-meta {
       font-size: 0.8rem;
@@ -982,7 +999,7 @@
               <span class="tag ${isMkv ? 'mkv' : 'mp4'}">${escapeHtml(ext) || 'VIDEO'}</span>
             </div>
             <div class="card-body">
-              <div class="card-title">${escapeHtml(rec.name)}</div>
+              <div class="card-title" data-path="${escapeHtml(rec.path)}" data-name="${escapeHtml(rec.name)}" title="Double-click to edit name">${escapeHtml(rec.name)}</div>
               <div class="card-meta">
                 <div>${escapeHtml(rec.source_label)}</div>
                 <div>${rec.size_human} · ${formatDate(rec.modified_iso)}</div>
@@ -1014,6 +1031,56 @@
       });
       grid.querySelectorAll('.remux-one').forEach(btn => {
         btn.addEventListener('click', () => remuxPaths([btn.dataset.path]));
+      });
+      grid.querySelectorAll('.card-title[data-path]').forEach(el => {
+        el.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          const path = el.dataset.path;
+          const name = el.dataset.name || '';
+          const parent = el.parentElement;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'card-title-input';
+          input.value = name;
+          input.autocomplete = 'off';
+          function done() {
+            const newName = input.value.trim();
+            if (newName === name) {
+              parent.replaceChild(el, input);
+              return;
+            }
+            if (!newName) {
+              parent.replaceChild(el, input);
+              return;
+            }
+            fetch(API + '/recordings/rename', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ path, new_name: newName }),
+            })
+              .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json(); })
+              .then(data => {
+                if (selectedRecordingPaths.has(path)) {
+                  selectedRecordingPaths.delete(path);
+                  selectedRecordingPaths.add(data.path);
+                }
+                parent.replaceChild(el, input);
+                loadRecordings();
+              })
+              .catch(err => {
+                alert('Rename failed: ' + (err.message || err));
+                parent.replaceChild(el, input);
+              });
+          }
+          input.addEventListener('blur', done);
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { input.value = name; input.blur(); }
+          });
+          parent.replaceChild(input, el);
+          input.focus();
+          input.select();
+        });
       });
     }
 
