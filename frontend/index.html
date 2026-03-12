@@ -1138,7 +1138,9 @@
           return;
         }
         list.innerHTML = jobs.map(j => {
-          const pct = j.total ? Math.round((j.done / j.total) * 100) : 0;
+          const basePct = j.total ? (j.done / j.total) * 100 : 0;
+          const currentPct = (j.current_file_pct != null && j.total) ? j.current_file_pct / j.total : 0;
+          const pct = Math.min(100, Math.round(basePct + currentPct));
           const current = j.current_file ? ' · ' + (j.current_file.split(/[/\\]/).pop() || '') : '';
           return `
             <div class="job-item">

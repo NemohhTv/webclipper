@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import subprocess
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from app.config import PREVIEW_DIR, SUPPORTED_EXTENSIONS
 
@@ -309,23 +310,86 @@ def create_clip(
     return True, out_path
 
 
-def remux_mkv_to_mp4(mkv_path: str) -> tuple[bool, str]:
-    """Remux MKV to MP4 (stream copy), then remove MKV. Returns (success, message_or_mp4_path)."""
+def _parse_ffmpeg_time(s: str) -> float | None:
+    """Parse time=HH:MM:SS.ms from ffmpeg stderr. Returns seconds or None."""
+    m = re.search(r"time=(\d+):(\d+):(\d+)\.?(\d*)", s)
+    if not m:
+        return None
+    h, m_i, s_i, ms = int(m.group(1)), int(m.group(2)), float(m.group(3)), (m.group(4) or "0")
+    frac = float("0." + ms) if ms else 0.0
+    return h * 3600 + m_i * 60 + s_i + frac
+
+
+def remux_mkv_to_mp4(
+    mkv_path: str,
+    progress_callback: Callable[[float], None] | None = None,
+) -> tuple[bool, str]:
+    """Remux MKV to MP4 (stream copy), report progress via callback, then delete MKV. Returns (success, message_or_mp4_path)."""
     p = Path(mkv_path)
     if p.suffix.lower() != ".mkv":
         return False, "Not MKV"
     mp4_path = str(p.with_suffix(".mp4"))
-    code, _, err = _run([
+    duration_sec = 0.0
+    if progress_callback:
+        info = get_file_info(mkv_path)
+        if not info.get("error"):
+            duration_sec = float(info.get("duration") or 0)
+    cmd = [
         "ffmpeg", "-y",
         "-i", mkv_path,
         "-c", "copy",
         "-movflags", "+faststart",
         mp4_path,
-    ], timeout=600)
-    if code != 0:
-        return False, err or "remux failed"
+    ]
+    if not progress_callback or duration_sec <= 0:
+        code, _, err = _run(cmd, timeout=600)
+        if code != 0:
+            return False, err or "remux failed"
+        if p.exists():
+            try:
+                p.unlink()
+            except OSError:
+                pass
+        return True, mp4_path
     try:
-        p.unlink()
-    except OSError:
-        pass
+        proc = subprocess.Popen(
+            cmd,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
+        last_pct = -1.0
+        assert proc.stderr is not None
+        buf = ""
+        while True:
+            chunk = proc.stderr.read(512)
+            if not chunk:
+                break
+            buf += chunk
+            for line in buf.replace("\r", "\n").split("\n"):
+                t = _parse_ffmpeg_time(line)
+                if t is not None and duration_sec > 0:
+                    pct = min(100.0, 100.0 * t / duration_sec)
+                    if pct >= last_pct + 0.5 or pct >= 99.5:
+                        last_pct = pct
+                        progress_callback(pct)
+            buf = buf[buf.rfind("\n") + 1:] if "\n" in buf else buf[-200:]
+        proc.wait(timeout=600)
+        if proc.returncode == 0:
+            progress_callback(100.0)
+        if proc.returncode != 0:
+            return False, "remux failed"
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+        return False, "timeout"
+    except Exception as e:
+        return False, str(e)
+    if not Path(mp4_path).exists():
+        return False, "output file not created"
+    if p.exists():
+        try:
+            p.unlink()
+        except OSError:
+            pass
     return True, mp4_path

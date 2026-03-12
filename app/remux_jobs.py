@@ -21,9 +21,16 @@ def create_job(paths: list[str]) -> str:
             "total": len(paths),
             "done": 0,
             "current_file": None,
+            "current_file_pct": None,
             "results": [],
             "error": None,
         }
+    def progress_callback(pct: float) -> None:
+        with _lock:
+            job = _jobs.get(job_id)
+            if job:
+                job["current_file_pct"] = round(pct, 1)
+
     def run():
         with _lock:
             job = _jobs.get(job_id)
@@ -35,12 +42,14 @@ def create_job(paths: list[str]) -> str:
                 if not job:
                     return
                 job["current_file"] = path
-            ok, msg = remux_mkv_to_mp4(path)
+                job["current_file_pct"] = None
+            ok, msg = remux_mkv_to_mp4(path, progress_callback=progress_callback)
             with _lock:
                 job = _jobs.get(job_id)
                 if not job:
                     return
                 job["done"] = i + 1
+                job["current_file_pct"] = None
                 job["results"].append({"path": path, "success": ok, "message": msg})
                 if not ok:
                     job["error"] = msg
@@ -49,6 +58,7 @@ def create_job(paths: list[str]) -> str:
             if job:
                 job["status"] = "done" if all(r["success"] for r in job["results"]) else "failed"
                 job["current_file"] = None
+                job["current_file_pct"] = None
     t = threading.Thread(target=run, daemon=True)
     t.start()
     return job_id
